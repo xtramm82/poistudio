@@ -6,7 +6,7 @@
   <title>POI studio</title>
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    href="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.css"
     crossorigin=""
   >
   <style>
@@ -274,7 +274,7 @@
       top: calc(100% + 10px);
       right: 0;
       z-index: 20;
-      width: 270px;
+      width: 320px;
       padding: 14px;
       border-radius: 18px;
       border: 1px solid rgba(120, 113, 108, 0.16);
@@ -282,6 +282,9 @@
       box-shadow: 0 16px 36px rgba(120, 113, 108, 0.18);
       display: grid;
       gap: 10px;
+    }
+    .map-settings-menu[hidden] {
+      display: none !important;
     }
     .map-settings-title {
       font-size: 0.82rem;
@@ -812,6 +815,15 @@
       border-top: 1px solid rgba(120, 113, 108, 0.1);
       background: transparent;
     }
+    .run-log-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 2px;
+    }
+    .run-log-footer .btn {
+      padding: 9px 12px;
+      min-width: 120px;
+    }
     .run-log-body[hidden] {
       display: none !important;
     }
@@ -834,24 +846,27 @@
         radial-gradient(circle at top left, rgba(194, 65, 12, 0.12), transparent 26%),
         linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249, 250, 251, 0.94));
     }
-    .map-stage[data-basemap="blank"] {
-      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255,255,255,0.99));
-    }
     .results-map {
       width: 100%;
       height: 560px;
     }
     .map-empty {
       position: absolute;
-      inset: 18px;
+      inset: auto;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, calc(100% - 48px));
       display: grid;
       place-items: center;
       text-align: center;
-      padding: 24px;
+      padding: 18px 20px;
       color: var(--muted);
       font-weight: 700;
-      background: rgba(255,255,255,0.8);
-      border-radius: 18px;
+      background: rgba(255,255,255,0.76);
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      border-radius: 20px;
+      box-shadow: 0 16px 34px rgba(120, 113, 108, 0.12);
       pointer-events: none;
       backdrop-filter: blur(4px);
     }
@@ -899,14 +914,33 @@
       gap: 12px;
       align-items: flex-start;
     }
+    .cluster-item-lead {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .cluster-item-header {
+      min-width: 0;
+      flex: 1;
+    }
+    .cluster-item-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
     .cluster-item-title {
       font-weight: 800;
     }
-    .cluster-item-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
+    .cluster-item-count {
+      font-size: 0.82rem;
+      line-height: 1.35;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
     }
     .cluster-item-meta {
       color: var(--muted);
@@ -914,13 +948,64 @@
       line-height: 1.35;
       margin-top: 4px;
     }
+    .cluster-item-actions {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .cluster-json-link {
+      min-height: 32px;
+      padding-inline: 12px;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    .cluster-noise .cluster-item-title {
+      color: #111827;
+    }
     .cluster-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text);
+      justify-content: center;
+      width: 20px;
+      flex-shrink: 0;
+    }
+    .cluster-toggle input {
+      accent-color: var(--accent);
+      margin: 0;
+      width: 16px;
+      height: 16px;
+    }
+    .map-sidebar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .cluster-bulk-toggle {
+      min-height: 38px;
+      padding-inline: 14px;
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .noise-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      flex-shrink: 0;
+    }
+    .noise-toggle input {
+      accent-color: #111111;
+      margin: 0;
+      width: 16px;
+      height: 16px;
     }
     .collapsible-content[hidden] {
       display: none !important;
@@ -1043,7 +1128,10 @@
       <div class="box content-box">
         <div class="box-head">
           <h2>Stato esecuzione</h2>
-          <div class="inline-status box-status" id="runStatus" aria-live="polite">In attesa</div>
+          <div class="box-head-actions">
+            <div class="inline-status box-status" id="runStatus" aria-live="polite">In attesa</div>
+            <button class="btn danger" id="runStopBtn" type="button" hidden disabled>Interrompi esecuzione</button>
+          </div>
         </div>
         <div class="progress-card">
           <div class="progress-meta">
@@ -1088,33 +1176,84 @@
             <div class="map-settings" id="mapSettings">
               <button class="btn ghost map-settings-btn" id="mapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="mapSettingsMenu">⚙</button>
               <div class="map-settings-menu" id="mapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
-                <div class="map-settings-title">Sfondo mappa</div>
+                <div class="map-settings-title">Layer vettoriali</div>
                 <label class="map-setting-option">
-                  <input type="radio" name="mapBaseStyle" value="standard">
-                  <span>Mappa standard</span>
+                  <input type="checkbox" name="mapLayerToggle" value="poi">
+                  <span>POI generici</span>
                 </label>
                 <label class="map-setting-option">
-                  <input type="radio" name="mapBaseStyle" value="clean">
-                  <span>Mappa pulita</span>
+                  <input type="checkbox" name="mapLayerToggle" value="transit_poi">
+                  <span>Trasporti POI</span>
                 </label>
                 <label class="map-setting-option">
-                  <input type="radio" name="mapBaseStyle" value="blank">
-                  <span>Bianca</span>
+                  <input type="checkbox" name="mapLayerToggle" value="airport_labels">
+                  <span>Aeroporti</span>
                 </label>
-                <div class="map-settings-note">Con i tile raster non posso filtrare singoli POI come bar o fermate: questi preset cambiano lo sfondo della mappa.</div>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="place_labels">
+                  <span>Nomi luoghi</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="water_labels">
+                  <span>Nomi acqua</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="road_names">
+                  <span>Nomi strade</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="road_shields">
+                  <span>Cartelli stradali</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="road_direction">
+                  <span>Direzione strade</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="transit_lines">
+                  <span>Linee trasporto</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="boundary_lines">
+                  <span>Confini</span>
+                </label>
+                <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="housenumbers" disabled>
+                  <span>Numeri civici</span>
+                </label>
+                <div class="map-settings-note">Il controllo agisce sui layer vettoriali disponibili nello style 2D corrente. I numeri civici non sono esposti dallo style corrente.</div>
               </div>
             </div>
           </div>
         </div>
         <div class="map-layout">
           <div class="map-stage">
-            <div class="results-map" id="resultsMap" aria-label="Mappa OpenStreetMap dei cluster"></div>
+            <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
             <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
           </div>
           <div class="map-sidebar">
             <div class="map-sidebar-head">
               <div class="map-sidebar-title">Cluster disponibili</div>
               <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
+              <div class="map-sidebar-actions">
+                <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
+              </div>
+            </div>
+            <div class="cluster-item cluster-noise" id="noisePointsBox">
+              <div class="cluster-item-top">
+                <div class="cluster-item-lead">
+                  <label class="noise-toggle">
+                    <input type="checkbox" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
+                  </label>
+                  <div class="cluster-item-header">
+                    <div class="cluster-item-title-row">
+                      <div class="cluster-item-title">Punti fuori cluster</div>
+                      <div class="cluster-item-count" id="noisePointsCount">0 punti</div>
+                    </div>
+                    <div class="cluster-item-meta" id="noisePointsMeta">Punti non assegnati a nessun cluster</div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="cluster-list" id="runMapClusters"></div>
           </div>
@@ -1123,13 +1262,18 @@
     </section>
   </div>
 
+  <script
+    src="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.js"
+    crossorigin=""
+  ></script>
   <script>
     const API = {
       config: '/api/poi/config',
       configTestSql: '/api/poi/config/test-sql',
       executionSets: '/api/poi/execution-sets',
       runs: '/api/poi/runs',
-      runState: '/api/poi/run-state'
+      runState: '/api/poi/run-state',
+      runCancel: '/api/poi/run-state/cancel'
     };
 
     const infractionOptions = [
@@ -1141,6 +1285,143 @@
       [5, '5 - Safety'],
       [6, '6 - Other (absence os insurance, certificates, etc)']
     ];
+
+    const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
+    const MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.mapLayerGroups.v1';
+
+    const MAP_LAYER_GROUPS = [
+      {
+        id: 'poi',
+        label: 'POI generici',
+        layerIds: ['poi_r1', 'poi_r7', 'poi_r20']
+      },
+      {
+        id: 'transit_poi',
+        label: 'Trasporti POI',
+        layerIds: ['poi_transit']
+      },
+      {
+        id: 'airport_labels',
+        label: 'Aeroporti',
+        layerIds: ['airport']
+      },
+      {
+        id: 'place_labels',
+        label: 'Nomi luoghi',
+        layerIds: [
+          'label_other',
+          'label_village',
+          'label_town',
+          'label_state',
+          'label_city',
+          'label_city_capital',
+          'label_country_3',
+          'label_country_2',
+          'label_country_1'
+        ]
+      },
+      {
+        id: 'water_labels',
+        label: 'Nomi acqua',
+        layerIds: ['water_name_point_label', 'water_name_line_label']
+      },
+      {
+        id: 'road_names',
+        label: 'Nomi strade',
+        layerIds: [
+          'highway-name-path',
+          'highway-name-minor',
+          'highway-name-major'
+        ]
+      },
+      {
+        id: 'road_shields',
+        label: 'Cartelli stradali',
+        layerIds: [
+          'highway-shield-non-us',
+          'highway-shield-us-interstate',
+          'road_shield_us'
+        ]
+      },
+      {
+        id: 'road_direction',
+        label: 'Direzione strade',
+        layerIds: [
+          'road_oneway',
+          'road_oneway_opposite'
+        ]
+      },
+      {
+        id: 'transit_lines',
+        label: 'Linee trasporto',
+        layerIds: [
+          'railway-transit',
+          'railway-transit-hatching',
+          'railway-service',
+          'railway-service-hatching',
+          'railway',
+          'railway-hatching',
+          'bridge-railway',
+          'bridge-railway-hatching',
+          'ferry',
+          'cablecar',
+          'cablecar-dash'
+        ]
+      },
+      {
+        id: 'boundary_lines',
+        label: 'Confini',
+        layerIds: [
+          'boundary_3',
+          'boundary_2',
+          'boundary_disputed'
+        ]
+      },
+      {
+        id: 'housenumbers',
+        label: 'Numeri civici',
+        layerIds: [],
+        supported: false
+      }
+    ];
+
+    function getDefaultMapVisibleLayerGroups() {
+      return MAP_LAYER_GROUPS.reduce((acc, group) => {
+        acc[group.id] = group.id === 'road_direction' || group.id === 'boundary_lines' || group.id === 'housenumbers'
+          ? false
+          : true;
+        return acc;
+      }, {});
+    }
+
+    function normalizeMapVisibleLayerGroups(value) {
+      const defaults = getDefaultMapVisibleLayerGroups();
+      if (!value || typeof value !== 'object') return defaults;
+      return MAP_LAYER_GROUPS.reduce((acc, group) => {
+        acc[group.id] = typeof value[group.id] === 'boolean' ? value[group.id] : defaults[group.id];
+        return acc;
+      }, {});
+    }
+
+    function loadPersistedMapVisibleLayerGroups() {
+      try {
+        if (typeof localStorage === 'undefined') return getDefaultMapVisibleLayerGroups();
+        const raw = localStorage.getItem(MAP_LAYER_SETTINGS_STORAGE_KEY);
+        if (!raw) return getDefaultMapVisibleLayerGroups();
+        return normalizeMapVisibleLayerGroups(JSON.parse(raw));
+      } catch {
+        return getDefaultMapVisibleLayerGroups();
+      }
+    }
+
+    function persistMapVisibleLayerGroups() {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(MAP_LAYER_SETTINGS_STORAGE_KEY, JSON.stringify(state.runMapVisibleLayerGroups));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
 
     const state = {
       config: null,
@@ -1154,19 +1435,20 @@
       runStatePoller: null,
       runStateTicker: null,
       runStatePollInFlight: false,
+      runStopInFlight: false,
       resultsCollapsed: true,
       activePageId: 'config-page',
       runMap: null,
-      runMapRenderer: null,
-      runMapLeafletReady: null,
       runMapRunId: null,
       runMapClusterFiles: [],
       runMapClusterPayloads: {},
       runMapClusterLayers: {},
       runMapEnabledClusterIds: {},
-      runMapBaseStyle: 'standard',
-      runMapBaseLayers: {},
-      runMapBaseLayer: null
+      runMapNoiseEnabled: false,
+      runMapNoisePayload: null,
+      runMapNoiseLayer: null,
+      runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
+      runMapClusterBounds: {}
     };
 
     const els = {
@@ -1184,6 +1466,7 @@
       executionSetsList: document.getElementById('executionSetsList'),
       executionPickerList: document.getElementById('executionPickerList'),
       runStatus: document.getElementById('runStatus'),
+      runStopBtn: document.getElementById('runStopBtn'),
       runProgressLabel: document.getElementById('runProgressLabel'),
       runProgressValue: document.getElementById('runProgressValue'),
       runProgressFill: document.getElementById('runProgressFill'),
@@ -1197,6 +1480,10 @@
       mapSettingsBtn: document.getElementById('mapSettingsBtn'),
       mapSettingsMenu: document.getElementById('mapSettingsMenu'),
       runMapStatus: document.getElementById('runMapStatus'),
+      clusterBulkToggle: document.getElementById('clusterBulkToggle'),
+      noisePointsToggle: document.getElementById('noisePointsToggle'),
+      noisePointsCount: document.getElementById('noisePointsCount'),
+      noisePointsMeta: document.getElementById('noisePointsMeta'),
       runMapClusters: document.getElementById('runMapClusters'),
       resultsMap: document.getElementById('resultsMap'),
       resultsMapEmpty: document.getElementById('resultsMapEmpty'),
@@ -1386,6 +1673,7 @@
 
     function formatRunStatus(status) {
       if (status === 'running') return { label: 'In esecuzione', state: 'loading' };
+      if (status === 'cancelled') return { label: 'Interrotta', state: 'warn' };
       if (status === 'completed') return { label: 'Completata', state: 'ok' };
       if (status === 'failed') return { label: 'Fallita', state: 'error' };
       return { label: 'In attesa', state: '' };
@@ -1400,7 +1688,7 @@
       const numeric = Number(value);
       if (!Number.isFinite(numeric)) return 'Compattezza n/d';
       const clamped = Math.max(0, Math.min(100, Math.round(numeric)));
-      return `Compattezza ${clamped}%`;
+      return `Compattezza punti ${clamped}%`;
     }
 
     function formatDuration(ms) {
@@ -1430,6 +1718,11 @@
     }
 
     function getRunTimingLabel(current = {}) {
+      if (current.running) {
+        if (current.elapsedLabel) return current.elapsedLabel;
+        const elapsedMs = getRunElapsedMs(current);
+        return elapsedMs == null ? '' : formatDuration(elapsedMs);
+      }
       if (current.durationLabel) return current.durationLabel;
       const elapsedMs = getRunElapsedMs(current);
       return elapsedMs == null ? '' : formatDuration(elapsedMs);
@@ -1451,6 +1744,17 @@
           }
         }, 1000);
       }
+    }
+
+    function syncRunStopButton(current = state.currentRunState || {}) {
+      if (!els.runStopBtn) return;
+      const running = Boolean(current.running);
+      const busy = Boolean(state.runStopInFlight);
+      els.runStopBtn.hidden = !running;
+      els.runStopBtn.disabled = !running || busy;
+      els.runStopBtn.innerHTML = busy && running
+        ? '<span class="spinner"></span> Interruzione...'
+        : 'Interrompi esecuzione';
     }
 
     function buildPoiClusterUrl(runId, clusterId) {
@@ -1482,19 +1786,34 @@
 
     function clearRunMapLayers() {
       if (!state.runMap) return;
-      Object.values(state.runMapClusterLayers).forEach(layer => {
-        if (layer && state.runMap.hasLayer(layer)) state.runMap.removeLayer(layer);
+      Object.values(state.runMapClusterLayers).forEach(entry => {
+        if (!entry) return;
+        if (entry.layerId && state.runMap.getLayer(entry.layerId)) {
+          state.runMap.removeLayer(entry.layerId);
+        }
+        if (entry.sourceId && state.runMap.getSource(entry.sourceId)) {
+          state.runMap.removeSource(entry.sourceId);
+        }
       });
       state.runMapClusterLayers = {};
+      state.runMapClusterBounds = {};
     }
 
     function updateRunMapEmptyState() {
       const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
-      els.resultsMapEmpty.hidden = activeCount > 0;
+      const shouldHide = activeCount > 0 || Boolean(state.runMapNoiseEnabled);
+      els.resultsMapEmpty.hidden = shouldHide;
+      els.resultsMapEmpty.style.display = shouldHide ? 'none' : '';
+      els.resultsMapEmpty.setAttribute('aria-hidden', shouldHide ? 'true' : 'false');
     }
 
     function updateRunMapStatus(message = '', stateName = '') {
       setInlineStatus(els.runMapStatus, message, stateName);
+    }
+
+    function getMaplibre() {
+      if (window.maplibregl) return window.maplibregl;
+      throw new Error('MapLibre non caricato');
     }
 
     function setMapSettingsMenuOpen(open) {
@@ -1505,58 +1824,221 @@
 
     function syncMapSettingsMenu() {
       if (!els.mapSettingsMenu) return;
-      els.mapSettingsMenu.querySelectorAll('input[name="mapBaseStyle"]').forEach(input => {
-        input.checked = input.value === state.runMapBaseStyle;
+      syncMapLayerGroupMenu();
+    }
+
+    function buildClusterGeoJson(cluster) {
+      return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], () => ({
+        clusterId: cluster.ClusterId
+      }));
+    }
+
+    function buildPointsGeoJson(points, getProperties = () => ({})) {
+      const features = Array.isArray(points)
+        ? points
+          .filter(point => Number.isFinite(Number(point.Latitudine)) && Number.isFinite(Number(point.Longitudine)))
+          .map(point => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [Number(point.Longitudine), Number(point.Latitudine)]
+            },
+            properties: {
+              ...getProperties(point)
+            }
+          }))
+        : [];
+      return {
+        type: 'FeatureCollection',
+        features
+      };
+    }
+
+    function getRunNoiseUrl(runId) {
+      return `/api/poi/runs/${encodeURIComponent(runId)}/noise`;
+    }
+
+    function clearRunMapNoiseLayer() {
+      if (!state.runMap) {
+        state.runMapNoiseLayer = null;
+        return;
+      }
+      if (state.runMapNoiseLayer?.layerId && state.runMap.getLayer(state.runMapNoiseLayer.layerId)) {
+        state.runMap.removeLayer(state.runMapNoiseLayer.layerId);
+      }
+      if (state.runMapNoiseLayer?.sourceId && state.runMap.getSource(state.runMapNoiseLayer.sourceId)) {
+        state.runMap.removeSource(state.runMapNoiseLayer.sourceId);
+      }
+      state.runMapNoiseLayer = null;
+    }
+
+    function ensureNoiseLayerOnMap(noise) {
+      if (!state.runMap || !noise) return;
+      const sourceId = 'noise-source';
+      const layerId = 'noise-layer';
+      const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : []);
+
+      if (state.runMap.getSource(sourceId)) {
+        state.runMap.getSource(sourceId).setData(data);
+      } else {
+        state.runMap.addSource(sourceId, {
+          type: 'geojson',
+          data
+        });
+      }
+
+      if (!state.runMap.getLayer(layerId)) {
+        state.runMap.addLayer({
+          id: layerId,
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-color': '#111111',
+            'circle-radius': 4,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 0.92
+          }
+        });
+      }
+
+      state.runMapNoiseLayer = { sourceId, layerId };
+    }
+
+    function rehydrateVisibleNoise() {
+      if (!state.runMap || !state.runMapNoiseEnabled) return;
+      if (state.runMapNoisePayload) {
+        ensureNoiseLayerOnMap(state.runMapNoisePayload);
+      }
+    }
+
+    function buildClusterBounds(cluster) {
+      const minLat = Number(cluster?.MinLatitudine);
+      const maxLat = Number(cluster?.MaxLatitudine);
+      const minLon = Number(cluster?.MinLongitudine);
+      const maxLon = Number(cluster?.MaxLongitudine);
+      if ([minLat, maxLat, minLon, maxLon].every(Number.isFinite)) {
+        return [
+          [minLon, minLat],
+          [maxLon, maxLat]
+        ];
+      }
+      const points = Array.isArray(cluster?.Punti) ? cluster.Punti : [];
+      const lats = points.map(point => Number(point.Latitudine)).filter(Number.isFinite);
+      const lons = points.map(point => Number(point.Longitudine)).filter(Number.isFinite);
+      if (!lats.length || !lons.length) return null;
+      return [
+        [Math.min(...lons), Math.min(...lats)],
+        [Math.max(...lons), Math.max(...lats)]
+      ];
+    }
+
+    function applyMapLayerGroupVisibility(groupId, visible) {
+      if (!Object.prototype.hasOwnProperty.call(state.runMapVisibleLayerGroups, groupId)) return;
+      state.runMapVisibleLayerGroups[groupId] = Boolean(visible);
+      persistMapVisibleLayerGroups();
+      if (!state.runMap) return;
+      const group = MAP_LAYER_GROUPS.find(item => item.id === groupId);
+      if (!group) return;
+      group.layerIds.forEach(layerId => {
+        if (state.runMap.getLayer(layerId)) {
+          state.runMap.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+        }
       });
     }
 
-    function removeCurrentRunMapBaseLayer() {
-      if (state.runMap && state.runMapBaseLayer && state.runMap.hasLayer(state.runMapBaseLayer)) {
-        state.runMap.removeLayer(state.runMapBaseLayer);
-      }
-      state.runMapBaseLayer = null;
+    function syncMapLayerGroupMenu() {
+      if (!els.mapSettingsMenu) return;
+      els.mapSettingsMenu.querySelectorAll('input[name="mapLayerToggle"]').forEach(input => {
+        const group = MAP_LAYER_GROUPS.find(item => item.id === input.value);
+        input.checked = Boolean(state.runMapVisibleLayerGroups[input.value]);
+        input.disabled = group?.supported === false;
+      });
     }
 
-    function applyRunMapBaseStyle(style) {
-      const nextStyle = ['standard', 'clean', 'blank'].includes(style) ? style : 'standard';
-      state.runMapBaseStyle = nextStyle;
-      const stage = els.resultsMap?.closest('.map-stage');
-      if (stage) stage.dataset.basemap = nextStyle;
-      if (!state.runMap) {
-        syncMapSettingsMenu();
-        return;
-      }
-
-      removeCurrentRunMapBaseLayer();
-      const baseLayer = state.runMapBaseLayers[nextStyle] || null;
-      if (baseLayer) {
-        baseLayer.addTo(state.runMap);
-        state.runMapBaseLayer = baseLayer;
-      }
-      syncMapSettingsMenu();
+    function applyAllMapLayerVisibilities() {
+      MAP_LAYER_GROUPS.forEach(group => {
+        applyMapLayerGroupVisibility(group.id, state.runMapVisibleLayerGroups[group.id]);
+      });
+      syncMapLayerGroupMenu();
     }
 
-    function buildBlankBaseLayer() {
-      return window.L.layerGroup();
+    function ensureClusterLayerOnMap(clusterId, cluster) {
+      if (!state.runMap || !cluster) return;
+      const sourceId = `cluster-source-${clusterId}`;
+      const layerId = `cluster-layer-${clusterId}`;
+      const data = buildClusterGeoJson(cluster);
+      const color = getClusterColor(cluster.ClusterId);
+
+      if (state.runMap.getSource(sourceId)) {
+        state.runMap.getSource(sourceId).setData(data);
+      } else {
+        state.runMap.addSource(sourceId, {
+          type: 'geojson',
+          data
+        });
+      }
+
+      if (!state.runMap.getLayer(layerId)) {
+        state.runMap.addLayer({
+          id: layerId,
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-color': color,
+            'circle-radius': 5,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 0.72
+          }
+        });
+      }
+
+      state.runMapClusterLayers[clusterId] = { sourceId, layerId };
+      state.runMapClusterBounds[clusterId] = buildClusterBounds(cluster);
+    }
+
+    function removeClusterLayers(clusterId) {
+      if (!state.runMap) return;
+      const entry = state.runMapClusterLayers[clusterId];
+      if (!entry) return;
+      if (entry.layerId && state.runMap.getLayer(entry.layerId)) {
+        state.runMap.removeLayer(entry.layerId);
+      }
+      if (entry.sourceId && state.runMap.getSource(entry.sourceId)) {
+        state.runMap.removeSource(entry.sourceId);
+      }
+      delete state.runMapClusterLayers[clusterId];
+      delete state.runMapClusterBounds[clusterId];
+    }
+
+    function rehydrateVisibleClusters() {
+      if (!state.runMap) return;
+      Object.entries(state.runMapEnabledClusterIds).forEach(([clusterId, enabled]) => {
+        if (!enabled) return;
+        const cluster = state.runMapClusterPayloads[clusterId];
+        if (cluster) {
+          ensureClusterLayerOnMap(clusterId, cluster);
+        }
+      });
+      applyAllMapLayerVisibilities();
+      updateRunMapViewport();
     }
 
     function updateRunMapViewport() {
       if (!state.runMap) return;
-      const activeLayers = Object.entries(state.runMapClusterLayers)
-        .filter(([clusterId]) => state.runMapEnabledClusterIds[clusterId] && state.runMap.hasLayer(state.runMapClusterLayers[clusterId]))
-        .map(([, layer]) => layer)
-        .filter(Boolean);
-      if (!activeLayers.length) return;
-      const bounds = activeLayers.reduce((acc, layer) => {
-        const layerBounds = typeof layer.getBounds === 'function' ? layer.getBounds() : null;
-        if (layerBounds?.isValid()) {
-          if (!acc) return layerBounds;
-          acc.extend(layerBounds);
-        }
-        return acc;
-      }, null);
-      if (bounds?.isValid()) {
-        state.runMap.fitBounds(bounds.pad(0.08), { animate: false });
+      const bounds = new window.maplibregl.LngLatBounds();
+      let hasBounds = false;
+      Object.entries(state.runMapEnabledClusterIds).forEach(([clusterId, enabled]) => {
+        if (!enabled) return;
+        const clusterBounds = state.runMapClusterBounds[clusterId];
+        if (!clusterBounds) return;
+        bounds.extend(clusterBounds[0]);
+        bounds.extend(clusterBounds[1]);
+        hasBounds = true;
+      });
+      if (hasBounds) {
+        state.runMap.fitBounds(bounds, { padding: 48, duration: 0 });
       }
     }
 
@@ -1564,6 +2046,129 @@
       els.runMapClusters.querySelectorAll('input[data-cluster-id]').forEach(input => {
         input.checked = Boolean(state.runMapEnabledClusterIds[input.dataset.clusterId]);
       });
+    }
+
+    function syncRunMapNoiseSelection(noiseCountFallback = 0) {
+      if (els.noisePointsToggle) {
+        els.noisePointsToggle.checked = Boolean(state.runMapNoiseEnabled);
+      }
+      if (els.noisePointsCount) {
+        const noiseCount = state.runMapNoisePayload?.PointCount;
+        els.noisePointsCount.textContent = `${formatCount(noiseCount ?? noiseCountFallback ?? 0)} punti`;
+      }
+      if (els.noisePointsMeta) {
+        els.noisePointsMeta.textContent = (state.runMapNoisePayload?.PointCount ?? noiseCountFallback ?? 0)
+          ? 'Punti non assegnati a nessun cluster'
+          : 'Nessun punto fuori cluster disponibile';
+      }
+    }
+
+    function syncRunMapBulkToggle() {
+      if (!els.clusterBulkToggle) return;
+      const hasClusters = Array.isArray(state.runMapClusterFiles) && state.runMapClusterFiles.length > 0;
+      const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
+      els.clusterBulkToggle.disabled = !hasClusters;
+      els.clusterBulkToggle.textContent = activeCount > 0 ? 'Disattiva tutti i cluster' : 'Attiva tutti i cluster';
+    }
+
+    function disableAllRunMapClusters() {
+      const activeClusterIds = Object.entries(state.runMapEnabledClusterIds)
+        .filter(([, enabled]) => Boolean(enabled))
+        .map(([clusterId]) => clusterId);
+
+      if (!activeClusterIds.length) {
+        syncRunMapBulkToggle();
+        return;
+      }
+
+      activeClusterIds.forEach(clusterId => removeClusterLayers(clusterId));
+      state.runMapEnabledClusterIds = {};
+      syncRunMapListSelection();
+      updateRunMapEmptyState();
+      updateRunMapViewport();
+      updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · 0 attivi`, '');
+      syncRunMapBulkToggle();
+    }
+
+    async function toggleNoisePointsOnMap(enabled) {
+      const run = getSelectedRun();
+      if (!run?.id) return;
+      await ensureRunMapReady();
+      const hasNoiseArtifact = Boolean(run?.artifacts?.noise?.path);
+
+      if (!hasNoiseArtifact) {
+        state.runMapNoiseEnabled = false;
+        clearRunMapNoiseLayer();
+        updateRunMapEmptyState();
+        updateRunMapStatus('Punti fuori cluster non persistiti per questo run', 'error');
+        syncRunMapNoiseSelection(Number(run?.summary?.noisePointCount ?? 0));
+        return;
+      }
+
+      if (!enabled) {
+        state.runMapNoiseEnabled = false;
+        clearRunMapNoiseLayer();
+        updateRunMapEmptyState();
+        updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi`, '');
+        syncRunMapNoiseSelection();
+        return;
+      }
+
+      try {
+        state.runMapNoiseEnabled = true;
+        updateRunMapStatus('Caricamento punti fuori cluster...', 'loading');
+        if (!state.runMapNoisePayload) {
+          const payload = await fetchJson(getRunNoiseUrl(run.id), { timeoutMs: 15000 });
+          state.runMapNoisePayload = payload.noise || payload || null;
+        }
+        const noise = state.runMapNoisePayload;
+        if (!noise) throw new Error('Punti fuori cluster non disponibili');
+        ensureNoiseLayerOnMap(noise);
+        updateRunMapEmptyState();
+        updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi · rumore attivo`, 'ok');
+        syncRunMapNoiseSelection();
+      } catch (err) {
+        state.runMapNoiseEnabled = false;
+        clearRunMapNoiseLayer();
+        updateRunMapEmptyState();
+        updateRunMapStatus(`Errore punti fuori cluster: ${escapeHtml(err.message)}`, 'error');
+        syncRunMapNoiseSelection();
+      }
+    }
+
+    async function enableAllRunMapClusters() {
+      const run = getSelectedRun();
+      if (!run?.id) return;
+      await ensureRunMapReady();
+      const clusterIds = Array.isArray(state.runMapClusterFiles) ? state.runMapClusterFiles.map(file => String(file.clusterId)) : [];
+      if (!clusterIds.length) {
+        syncRunMapBulkToggle();
+        return;
+      }
+
+      updateRunMapStatus(`Caricamento di ${formatCount(clusterIds.length)} cluster...`, 'loading');
+      try {
+        await Promise.all(clusterIds.map(async clusterId => {
+          state.runMapEnabledClusterIds[clusterId] = true;
+          if (!state.runMapClusterPayloads[clusterId]) {
+            const payload = await fetchJson(buildPoiClusterUrl(run.id, clusterId), { timeoutMs: 15000 });
+            state.runMapClusterPayloads[clusterId] = payload.cluster || null;
+          }
+          const cluster = state.runMapClusterPayloads[clusterId];
+          if (!cluster) throw new Error(`Cluster ${clusterId} non disponibile`);
+          ensureClusterLayerOnMap(clusterId, cluster);
+        }));
+
+        applyAllMapLayerVisibilities();
+        syncRunMapListSelection();
+        updateRunMapEmptyState();
+        updateRunMapViewport();
+        updateRunMapStatus(`${formatCount(clusterIds.length)} cluster disponibili · ${formatCount(clusterIds.length)} attivi`, 'ok');
+      } catch (err) {
+        updateRunMapStatus(`Errore caricamento cluster: ${escapeHtml(err.message)}`, 'error');
+      } finally {
+        syncRunMapBulkToggle();
+      }
     }
 
     function renderRunMapSidebar(run = null) {
@@ -1576,6 +2181,9 @@
       state.runMapClusterFiles = files;
       state.runMapClusterPayloads = {};
       state.runMapEnabledClusterIds = {};
+      state.runMapNoiseEnabled = false;
+      state.runMapNoisePayload = null;
+      clearRunMapNoiseLayer();
       clearRunMapLayers();
       updateRunMapEmptyState();
       if (els.mapPageStatus) {
@@ -1594,13 +2202,38 @@
 
       if (!run) {
         updateRunMapStatus('Seleziona un risultato per usare la mappa', '');
+        if (els.noisePointsToggle) {
+          els.noisePointsToggle.disabled = true;
+        }
+        syncRunMapNoiseSelection(0);
         els.runMapClusters.innerHTML = '<div class="cluster-list-empty">Apri i risultati di un set e poi usa il tasto Mappa.</div>';
+        syncRunMapBulkToggle();
         return;
+      }
+
+      const noiseCount = Number(run?.summary?.noisePointCount ?? 0);
+      const hasNoiseArtifact = Boolean(run?.artifacts?.noise?.path);
+      if (els.noisePointsToggle) {
+        els.noisePointsToggle.disabled = !hasNoiseArtifact;
+      }
+      if (els.noisePointsCount) {
+        els.noisePointsCount.textContent = `${formatCount(noiseCount)} punti`;
+      }
+      if (els.noisePointsMeta) {
+        if (hasNoiseArtifact) {
+          els.noisePointsMeta.textContent = 'Punti non assegnati a nessun cluster';
+        } else if (noiseCount > 0) {
+          els.noisePointsMeta.textContent = 'Punti calcolati ma non persistiti in questo run';
+        } else {
+          els.noisePointsMeta.textContent = 'Nessun punto fuori cluster disponibile';
+        }
       }
 
       if (!files.length) {
         updateRunMapStatus('Nessun cluster disponibile per questo run', '');
+        syncRunMapNoiseSelection(noiseCount);
         els.runMapClusters.innerHTML = '<div class="cluster-list-empty">Questo run non ha file cluster da mostrare sulla mappa.</div>';
+        syncRunMapBulkToggle();
         return;
       }
 
@@ -1608,22 +2241,28 @@
       els.runMapClusters.innerHTML = files.map(file => `
         <div class="cluster-item">
           <div class="cluster-item-top">
-            <div>
-              <div class="cluster-item-title">Cluster ${escapeHtml(file.clusterId)}</div>
-              <div class="cluster-item-badges">
-                <span class="tag warn">${escapeHtml(formatCompactnessLabel(file.compactnessPercent ?? file.CompattezzaPercentuale ?? file.compactness ?? file.CompactnessPercent))}</span>
+            <div class="cluster-item-lead">
+              <label class="cluster-toggle">
+                <input type="checkbox" data-cluster-id="${escapeHtml(file.clusterId)}" aria-label="Mostra sulla mappa">
+              </label>
+              <div class="cluster-item-header">
+                <div class="cluster-item-title-row">
+                  <div class="cluster-item-title" style="color:${escapeHtml(getClusterColor(file.clusterId))};">Cluster ${escapeHtml(file.clusterId)}</div>
+                  <div class="cluster-item-count">${escapeHtml(formatCount(file.pointCount))} punti</div>
+                </div>
+                <div class="cluster-item-meta">${escapeHtml(formatCompactnessLabel(file.compactnessPercent ?? file.CompattezzaPercentuale ?? file.compactness ?? file.CompactnessPercent))}</div>
               </div>
-              <div class="cluster-item-meta">${escapeHtml(formatCount(file.pointCount))} punti</div>
             </div>
-            <span class="chip info" style="border-color:${escapeHtml(getClusterColor(file.clusterId))}; color:${escapeHtml(getClusterColor(file.clusterId))}; background:rgba(255,255,255,0.9);">colore</span>
+            <div class="cluster-item-actions">
+              <a class="btn ghost cluster-json-link" href="${escapeHtml(buildPoiClusterUrl(run.id, file.clusterId) + '?raw=1')}" target="_blank" rel="noopener noreferrer">JSON</a>
+            </div>
           </div>
-          <label class="cluster-toggle">
-            <input type="checkbox" data-cluster-id="${escapeHtml(file.clusterId)}">
-            Mostra sulla mappa
-          </label>
         </div>
       `).join('');
       syncRunMapListSelection();
+      syncRunMapNoiseSelection(noiseCount);
+      syncMapSettingsMenu();
+      syncRunMapBulkToggle();
     }
 
     function setRunLogCollapsed(runId, collapsed) {
@@ -1700,75 +2339,38 @@
                   `).join('')
                 : '<div class="file-item">Nessun file cluster generato</div>'}
             </div>
+            <div class="run-log-footer">
+              <button class="btn danger" type="button" data-run-delete="${escapeHtml(run.id)}">Elimina log</button>
+            </div>
           </div>
         </article>
       `;
     }
 
-    function buildClusterLayer(cluster) {
-      const color = getClusterColor(cluster.ClusterId);
-      const markers = Array.isArray(cluster.Punti)
-        ? cluster.Punti
-          .filter(point => Number.isFinite(Number(point.Latitudine)) && Number.isFinite(Number(point.Longitudine)))
-          .map(point => {
-            return window.L.circleMarker([Number(point.Latitudine), Number(point.Longitudine)], {
-              renderer: state.runMapRenderer,
-              radius: 4,
-              weight: 1,
-              color,
-              fillColor: color,
-              fillOpacity: 0.45
-            });
-          })
-        : [];
-      return window.L.featureGroup(markers);
-    }
-
-    async function ensureLeaflet() {
-      if (window.L) return window.L;
-      if (state.runMapLeafletReady) return state.runMapLeafletReady;
-      state.runMapLeafletReady = new Promise((resolve, reject) => {
-        const existing = document.querySelector('script[data-leaflet-script="true"]');
-        if (existing) {
-          existing.addEventListener('load', () => resolve(window.L), { once: true });
-          existing.addEventListener('error', () => reject(new Error('Impossibile caricare Leaflet')), { once: true });
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.async = true;
-        script.dataset.leafletScript = 'true';
-        script.onload = () => resolve(window.L);
-        script.onerror = () => reject(new Error('Impossibile caricare Leaflet'));
-        document.head.appendChild(script);
-      });
-      return state.runMapLeafletReady;
-    }
-
     async function ensureRunMapReady() {
-      await ensureLeaflet();
+      const maplibre = getMaplibre();
+      if (!maplibre) throw new Error('Impossibile caricare MapLibre');
       if (!state.runMap) {
-        state.runMapRenderer = window.L.canvas({ padding: 0.5 });
-        state.runMap = window.L.map(els.resultsMap, {
-          preferCanvas: true,
-          zoomControl: true
+        state.runMap = new maplibre.Map({
+          container: els.resultsMap,
+          style: MAP_STYLE_URL,
+          center: [12.4964, 41.9028],
+          zoom: 5
         });
-        state.runMapBaseLayers.standard = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors'
+        state.runMap.addControl(new maplibre.NavigationControl(), 'top-right');
+        state.runMap.on('style.load', () => {
+          applyAllMapLayerVisibilities();
+          rehydrateVisibleClusters();
+          rehydrateVisibleNoise();
         });
-        state.runMapBaseLayers.clean = window.L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        state.runMap.on('load', () => {
+          applyAllMapLayerVisibilities();
+          rehydrateVisibleClusters();
+          rehydrateVisibleNoise();
         });
-        state.runMapBaseLayers.blank = buildBlankBaseLayer();
-        const stage = els.resultsMap?.closest('.map-stage');
-        if (stage) stage.dataset.basemap = state.runMapBaseStyle;
-        applyRunMapBaseStyle(state.runMapBaseStyle);
-        state.runMap.setView([41.9028, 12.4964], 5);
       }
       requestAnimationFrame(() => {
-        if (state.runMap) state.runMap.invalidateSize(false);
+        if (state.runMap) state.runMap.resize();
       });
     }
 
@@ -1776,45 +2378,43 @@
       const run = getSelectedRun();
       if (!run?.id) return;
       await ensureRunMapReady();
+      const clusterKey = String(clusterId);
 
       if (!enabled) {
-        state.runMapEnabledClusterIds[clusterId] = false;
-        const existingLayer = state.runMapClusterLayers[clusterId];
-        if (existingLayer && state.runMap.hasLayer(existingLayer)) {
-          state.runMap.removeLayer(existingLayer);
-        }
+        state.runMapEnabledClusterIds[clusterKey] = false;
+        removeClusterLayers(clusterKey);
         updateRunMapEmptyState();
-        scheduleRunMapPoiRefresh(true);
         const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(activeCount)} attivi`, '');
+        updateRunMapViewport();
+        syncRunMapBulkToggle();
         return;
       }
 
       try {
-        updateRunMapStatus(`Caricamento cluster ${formatCount(clusterId)}...`, 'loading');
-        if (!state.runMapClusterPayloads[clusterId]) {
-          const payload = await fetchJson(buildPoiClusterUrl(run.id, clusterId), { timeoutMs: 15000 });
-          state.runMapClusterPayloads[clusterId] = payload.cluster || null;
+        state.runMapEnabledClusterIds[clusterKey] = true;
+        updateRunMapEmptyState();
+        updateRunMapStatus(`Caricamento cluster ${formatCount(clusterKey)}...`, 'loading');
+        if (!state.runMapClusterPayloads[clusterKey]) {
+          const payload = await fetchJson(buildPoiClusterUrl(run.id, clusterKey), { timeoutMs: 15000 });
+          state.runMapClusterPayloads[clusterKey] = payload.cluster || null;
         }
-        const cluster = state.runMapClusterPayloads[clusterId];
+        const cluster = state.runMapClusterPayloads[clusterKey];
         if (!cluster) throw new Error('Cluster non disponibile');
 
-        if (!state.runMapClusterLayers[clusterId]) {
-          state.runMapClusterLayers[clusterId] = buildClusterLayer(cluster);
-        }
-
-        state.runMapEnabledClusterIds[clusterId] = true;
-        state.runMapClusterLayers[clusterId].addTo(state.runMap);
+        ensureClusterLayerOnMap(clusterKey, cluster);
+        applyAllMapLayerVisibilities();
         updateRunMapEmptyState();
         updateRunMapViewport();
-        scheduleRunMapPoiRefresh(true);
         const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(activeCount)} attivi`, 'ok');
+        syncRunMapBulkToggle();
       } catch (err) {
-        state.runMapEnabledClusterIds[clusterId] = false;
+        state.runMapEnabledClusterIds[clusterKey] = false;
         syncRunMapListSelection();
         updateRunMapEmptyState();
-        updateRunMapStatus(`Errore cluster ${formatCount(clusterId)}: ${escapeHtml(err.message)}`, 'error');
+        updateRunMapStatus(`Errore cluster ${formatCount(clusterKey)}: ${escapeHtml(err.message)}`, 'error');
+        syncRunMapBulkToggle();
       }
     }
 
@@ -1850,8 +2450,14 @@
       if (current.stage === 'writing') {
         return `Scrittura dei file JSON cluster in corso: ${formatCount(details.filesWritten)} di ${formatCount(details.filesTotal)} completati.`;
       }
+      if (current.stage === 'cancelling') {
+        return 'Interruzione richiesta. Sto chiudendo l’esecuzione in corso.';
+      }
       if (current.stage === 'completed') {
         return 'Esecuzione terminata. Puoi aprire il box risultati per vedere il dettaglio dell’ultimo log disponibile.';
+      }
+      if (current.stage === 'cancelled') {
+        return current.message || 'Esecuzione interrotta.';
       }
       if (current.stage === 'failed') {
         return current.message || 'L’esecuzione si è interrotta con errore.';
@@ -1903,9 +2509,12 @@
     function renderRunState() {
       const current = state.currentRunState || {};
       const progress = Math.max(0, Math.min(100, Number(current.progress) || 0));
-      const status = formatRunStatus(current.status);
+      const status = current.stage === 'cancelling'
+        ? { label: 'Interruzione in corso', state: 'warn' }
+        : formatRunStatus(current.status);
 
       setInlineStatus(els.runStatus, status.label, status.state);
+      syncRunStopButton(current);
       els.runProgressLabel.textContent = current.message || 'Nessuna esecuzione avviata';
       els.runProgressValue.textContent = `${progress}%`;
       els.runProgressFill.style.width = `${progress}%`;
@@ -1941,14 +2550,29 @@
     function renderMapPage(run = null) {
       const resolvedRun = run || getSelectedRun();
       renderRunMapSidebar(resolvedRun);
-      const stage = els.resultsMap?.closest('.map-stage');
-      if (stage) stage.dataset.basemap = state.runMapBaseStyle;
       syncMapSettingsMenu();
       void ensureRunMapReady();
     }
 
     function getLatestRunForSet(setId) {
       return (Array.isArray(state.poiRuns) ? state.poiRuns : []).find(run => run.setId === setId) || null;
+    }
+
+    async function deleteRunLog(id) {
+      const run = (Array.isArray(state.poiRuns) ? state.poiRuns : []).find(item => item.id === id);
+      if (!run) return;
+      if (!confirm(`Eliminare il log di "${run.setName || 'Set senza nome'}"?`)) return;
+
+      try {
+        await fetchJson(`${API.runs}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (state.selectedResultRunId === id) state.selectedResultRunId = null;
+        if (state.selectedResultSetId && getLatestRunForSet(state.selectedResultSetId)?.id === id) {
+          state.selectedResultSetId = null;
+        }
+        await loadPoiRuns();
+      } catch (err) {
+        setInlineStatus(els.runStatus, 'Eliminazione log fallita: ' + err.message, 'error');
+      }
     }
 
     async function fetchJson(url, options = {}) {
@@ -2214,6 +2838,36 @@
       }
     }
 
+    async function stopCurrentRun() {
+      if (!state.currentRunState?.running || state.runStopInFlight) return;
+      if (!confirm('Interrompere l’esecuzione in corso?')) return;
+
+      state.runStopInFlight = true;
+      syncRunStopButton();
+      setInlineStatus(els.runStatus, '<span class="spinner"></span> Richiesta interruzione...', 'loading');
+
+      try {
+        const payload = await fetchJson(API.runCancel, {
+          method: 'POST',
+          body: JSON.stringify({})
+        });
+        state.currentRunState = payload.state || null;
+        renderRunState();
+        if (state.currentRunState?.running) {
+          startRunStatePolling();
+        } else {
+          stopRunStatePolling();
+          await loadPoiRuns();
+        }
+      } catch (err) {
+        setInlineStatus(els.runStatus, 'Interruzione fallita', 'error');
+        els.runProgressLabel.textContent = err.message;
+      } finally {
+        state.runStopInFlight = false;
+        syncRunStopButton();
+      }
+    }
+
     function switchPage(pageId) {
       state.activePageId = pageId;
       document.querySelectorAll('.nav button').forEach(button => {
@@ -2249,9 +2903,13 @@
     els.testSqlBtn.addEventListener('click', testSql);
     els.saveExecutionSetBtn.addEventListener('click', saveExecutionSet);
     els.resetExecutionSetBtn.addEventListener('click', resetExecutionSetForm);
+    if (els.runStopBtn) {
+      els.runStopBtn.addEventListener('click', stopCurrentRun);
+    }
     els.runResultsList.addEventListener('click', event => {
       const toggle = event.target.closest('[data-run-toggle]');
       const mapButton = event.target.closest('[data-run-map]');
+      const deleteButton = event.target.closest('[data-run-delete]');
       if (toggle) {
         const runId = toggle.dataset.runToggle;
         setRunLogCollapsed(runId, !isRunLogCollapsed(runId));
@@ -2263,6 +2921,10 @@
         state.selectedResultRunId = runId;
         state.selectedResultSetId = null;
         switchPage('map-page');
+        return;
+      }
+      if (deleteButton) {
+        void deleteRunLog(deleteButton.dataset.runDelete);
       }
     });
     if (els.mapSettingsBtn) {
@@ -2277,15 +2939,40 @@
         event.stopPropagation();
       });
       els.mapSettingsMenu.addEventListener('change', event => {
-        const input = event.target.closest('input[name="mapBaseStyle"]');
-        if (!input) return;
-        applyRunMapBaseStyle(input.value);
+        const layerInput = event.target.closest('input[name="mapLayerToggle"]');
+        if (layerInput) {
+          applyMapLayerGroupVisibility(layerInput.value, layerInput.checked);
+          syncMapLayerGroupMenu();
+          setMapSettingsMenuOpen(false);
+        }
       });
     }
     els.runMapClusters.addEventListener('change', event => {
       const input = event.target.closest('input[data-cluster-id]');
       if (!input) return;
       void toggleClusterOnMap(input.dataset.clusterId, input.checked);
+    });
+    if (els.clusterBulkToggle) {
+      els.clusterBulkToggle.addEventListener('click', () => {
+        const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
+        if (activeCount > 0) {
+          disableAllRunMapClusters();
+        } else {
+          void enableAllRunMapClusters();
+        }
+      });
+    }
+    if (els.noisePointsToggle) {
+      els.noisePointsToggle.addEventListener('change', event => {
+        void toggleNoisePointsOnMap(event.target.checked);
+      });
+    }
+    document.addEventListener('pointerdown', event => {
+      if (els.mapSettings?.contains(event.target)) return;
+      setMapSettingsMenuOpen(false);
+    }, true);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') setMapSettingsMenuOpen(false);
     });
     document.addEventListener('click', event => {
       if (!els.mapSettings?.contains(event.target)) {

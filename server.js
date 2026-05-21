@@ -75,6 +75,75 @@ function defaultPoiRunState() {
   };
 }
 let poiRunStateCache = loadJson(POI_RUN_STATE_FILE, defaultPoiRunState());
+let currentPoiRunControl = null;
+
+function createPoiRunCancellationError(reason = 'Esecuzione interrotta dall\'utente') {
+  const error = new Error(reason);
+  error.code = 'POI_RUN_CANCELLED';
+  error.status = 409;
+  return error;
+}
+
+function isPoiRunCancellationError(error) {
+  return Boolean(error && (error.code === 'POI_RUN_CANCELLED' || error.code === 'ERR_POI_RUN_CANCELLED'));
+}
+
+function createPoiRunControl() {
+  let request = null;
+  const cancelListeners = new Set();
+  return {
+    cancelled: false,
+    cancelReason: 'Esecuzione interrotta dall\'utente',
+    onCancel(listener) {
+      if (typeof listener !== 'function') return () => {};
+      if (this.cancelled) {
+        try {
+          listener(this.cancelReason);
+        } catch (error) {
+          console.error('Failed to run POI cancel listener', error);
+        }
+        return () => {};
+      }
+      cancelListeners.add(listener);
+      return () => cancelListeners.delete(listener);
+    },
+    bindRequest(nextRequest) {
+      request = nextRequest || null;
+      if (this.cancelled && request && typeof request.cancel === 'function') {
+        try {
+          request.cancel();
+        } catch (error) {
+          console.error('Failed to cancel POI request after abort', error);
+        }
+      }
+    },
+    abort(reason = 'Esecuzione interrotta dall\'utente') {
+      if (this.cancelled) return;
+      this.cancelled = true;
+      this.cancelReason = reason;
+      for (const listener of cancelListeners) {
+        try {
+          listener(reason);
+        } catch (error) {
+          console.error('Failed to run POI cancel listener', error);
+        }
+      }
+      cancelListeners.clear();
+      if (request && typeof request.cancel === 'function') {
+        try {
+          request.cancel();
+        } catch (error) {
+          console.error('Failed to cancel POI request', error);
+        }
+      }
+    },
+    throwIfCancelled() {
+      if (this.cancelled) {
+        throw createPoiRunCancellationError(this.cancelReason);
+      }
+    }
+  };
+}
 function formatDurationMs(ms) {
   const totalSeconds = Math.max(0, Math.floor(Number(ms) / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -432,11 +501,12 @@ function bindPoiSourceFilters(request, filters = {}) {
     idtipoinfrazione: infractionIds
   };
 }
-async function loadPoiSourcePoints(config, executionSet, onProgress = () => {}) {
+async function loadPoiSourcePoints(config, executionSet, onProgress = () => {}, control = null) {
   const targetTable = normalizeReportTableName(config?.tableName);
   const connectionConfig = parseSqlConnectionConfig(config?.sqlConnectionString);
   const pool = await new sql.ConnectionPool(connectionConfig).connect();
   try {
+    control?.throwIfCancelled();
     const filters = executionSet?.filters || {};
     const normalizedFilters = {
       citta: String(filters.citta || '').trim(),
@@ -449,11 +519,54 @@ async function loadPoiSourcePoints(config, executionSet, onProgress = () => {}) 
     streamRequest.stream = true;
 
     await new Promise((resolve, reject) => {
+      let settled = false;
+      let cancelSubscription = null;
       let rowsRead = 0;
       let lastEmittedRows = 0;
       let lastEmittedAt = 0;
+      const settleReject = (reason = control?.cancelReason) => {
+        if (settled) return;
+        settled = true;
+        if (cancelSubscription) {
+          cancelSubscription();
+          cancelSubscription = null;
+        }
+        reject(createPoiRunCancellationError(reason));
+      };
+      const settleResolve = () => {
+        if (settled) return;
+        settled = true;
+        if (cancelSubscription) {
+          cancelSubscription();
+          cancelSubscription = null;
+        }
+        resolve();
+      };
+
+      cancelSubscription = control?.onCancel?.((reason) => {
+        try {
+          if (typeof streamRequest.cancel === 'function') {
+            streamRequest.cancel();
+          }
+        } catch (error) {
+          console.error('Failed to cancel POI stream request from control listener', error);
+        }
+        settleReject(reason);
+      }) || null;
 
       streamRequest.on('row', row => {
+        if (settled) return;
+        if (control?.cancelled) {
+          try {
+            if (typeof streamRequest.cancel === 'function') {
+              streamRequest.cancel();
+            }
+          } catch (error) {
+            console.error('Failed to cancel POI stream request after abort', error);
+          }
+          settleReject(control?.cancelReason);
+          return;
+        }
         if (!totalRows) {
           totalRows = Number(row?.TotalRows || 0);
           onProgress({ phase: 'count-complete', totalRows, rowsRead: 0 }, { force: true });
@@ -470,17 +583,37 @@ async function loadPoiSourcePoints(config, executionSet, onProgress = () => {}) 
         lastEmittedAt = now;
         onProgress({ phase: 'stream', totalRows, rowsRead });
       });
-      streamRequest.on('error', reject);
+      streamRequest.on('error', err => {
+        if (settled) return;
+        if (control?.cancelled || isPoiRunCancellationError(err)) {
+          settleReject(control?.cancelReason);
+          return;
+        }
+        settled = true;
+        if (cancelSubscription) {
+          cancelSubscription();
+          cancelSubscription = null;
+        }
+        reject(err);
+      });
       streamRequest.on('done', () => {
+        if (settled) return;
+        if (control?.cancelled) {
+          settleReject(control?.cancelReason);
+          return;
+        }
         if (!totalRows) {
           onProgress({ phase: 'count-complete', totalRows: 0, rowsRead: 0 }, { force: true });
         }
         onProgress({ phase: 'stream-complete', totalRows, rowsRead }, { force: true });
-        resolve();
+        settleResolve();
       });
+      control?.bindRequest(streamRequest);
+      control?.throwIfCancelled();
       streamRequest.query(buildPoiSourceQuery(targetTable, normalizedFilters));
     });
 
+    control?.throwIfCancelled();
     return { rows, targetTable: config.tableName, totalRows: totalRows || rows.length };
   } finally {
     pool.close();
@@ -522,7 +655,7 @@ function createEventLoopYieldController(maxBlockMs = 40) {
     return true;
   };
 }
-async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
+async function runDbscan(points, epsKm, minPoints, onProgress = () => {}, control = null) {
   const clusters = [];
   const visited = new Array(points.length).fill(false);
   const assigned = new Array(points.length).fill(-1);
@@ -533,6 +666,10 @@ async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
   let noiseCount = 0;
   let queueProcessed = 0;
   const maybeYield = createEventLoopYieldController();
+  const yieldAndCheck = async (force = false) => {
+    await maybeYield(force);
+    control?.throwIfCancelled();
+  };
 
   function setAssigned(index, value) {
     const previous = assigned[index];
@@ -560,14 +697,16 @@ async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
   }
 
   async function regionQuery(index) {
+    control?.throwIfCancelled();
     if (neighborCache.has(index)) return neighborCache.get(index);
     const neighbors = [];
     for (let otherIndex = 0; otherIndex < points.length; otherIndex += 1) {
+      control?.throwIfCancelled();
       if (haversineKm(points[index], points[otherIndex]) <= epsKm) {
         neighbors.push(otherIndex);
       }
       if ((otherIndex % 256) === 0) {
-        await maybeYield();
+        await yieldAndCheck();
       }
     }
     neighborCache.set(index, neighbors);
@@ -576,15 +715,16 @@ async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
       phase: 'scan',
       currentPointIndex: index + 1
     });
-    await maybeYield();
+    await yieldAndCheck();
     return neighbors;
   }
 
   emitProgress({ phase: 'scan', currentPointIndex: 0 }, { force: true });
 
   for (let pointIndex = 0; pointIndex < points.length; pointIndex += 1) {
+    control?.throwIfCancelled();
     if ((pointIndex % 16) === 0) {
-      await maybeYield();
+      await yieldAndCheck();
     }
     if (visited[pointIndex]) continue;
     visited[pointIndex] = true;
@@ -614,8 +754,9 @@ async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
     });
 
     for (let queueIndex = 0; queueIndex < queue.length; queueIndex += 1) {
+      control?.throwIfCancelled();
       if ((queueIndex % 128) === 0) {
-        await maybeYield();
+        await yieldAndCheck();
       }
       const neighborIndex = queue[queueIndex];
       queueProcessed += 1;
@@ -659,11 +800,18 @@ async function runDbscan(points, epsKm, minPoints, onProgress = () => {}) {
     currentPointIndex: points.length,
     currentClusterSize: 0
   }, { force: true });
-  await maybeYield(true);
+  await yieldAndCheck(true);
+
+  const noiseIndexes = [];
+  for (let index = 0; index < assigned.length; index += 1) {
+    control?.throwIfCancelled();
+    if (assigned[index] === -2) noiseIndexes.push(index);
+  }
 
   return {
     clusters,
     noiseCount,
+    noiseIndexes,
     stats: {
       totalPoints: points.length,
       scannedPoints: visitedCount,
@@ -697,28 +845,55 @@ function buildClusterPayload(points, indexes, clusterId) {
     Punti: clusterPoints
   };
 }
-function writePoiClusterFiles(runId, setName, clusters, points) {
+function buildNoisePayload(points, indexes) {
+  const noisePoints = indexes.map(index => points[index]);
+  return {
+    PointCount: noisePoints.length,
+    Punti: noisePoints
+  };
+}
+async function writePoiClusterFiles(runId, setName, clusters, points, noiseIndexes = [], control = null, onProgress = () => {}) {
   const runDirName = `${new Date().toISOString().replace(/[:.]/g, '-')}_${sanitizePathSegment(setName)}_${sanitizePathSegment(runId).slice(0, 8)}`;
   const runDir = path.join(POI_CLUSTER_DIR, runDirName);
   fs.mkdirSync(runDir, { recursive: true });
+  if (control) control.runDir = runDir;
+  control?.throwIfCancelled();
+  const noisePayload = buildNoisePayload(points, noiseIndexes);
+  const noiseFileName = 'noise-points.json';
+  const noiseFilePath = path.join(runDir, noiseFileName);
+  saveJson(noiseFilePath, noisePayload);
+
+  const files = [];
+  onProgress({ filesWritten: 0, filesTotal: clusters.length });
+
+  for (let clusterIndex = 0; clusterIndex < clusters.length; clusterIndex += 1) {
+    control?.throwIfCancelled();
+    const indexes = clusters[clusterIndex];
+    const payload = buildClusterPayload(points, indexes, clusterIndex + 1);
+    const fileName = `cluster-${String(clusterIndex + 1).padStart(4, '0')}.json`;
+    const filePath = path.join(runDir, fileName);
+    saveJson(filePath, payload);
+    files.push({
+      clusterId: payload.ClusterId,
+      pointCount: payload.PointCount,
+      compactnessPercent: payload.CompattezzaPercentuale,
+      meanDistanceKm: payload.DistanzaMediaKm,
+      referenceRadiusKm: payload.RaggioRiferimentoKm,
+      fileName,
+      path: path.relative(__dirname, filePath)
+    });
+    onProgress({ filesWritten: clusterIndex + 1, filesTotal: clusters.length });
+    await new Promise(resolve => setImmediate(resolve));
+  }
 
   return {
     directory: path.relative(__dirname, runDir),
-    files: clusters.map((indexes, clusterIndex) => {
-      const payload = buildClusterPayload(points, indexes, clusterIndex + 1);
-      const fileName = `cluster-${String(clusterIndex + 1).padStart(4, '0')}.json`;
-      const filePath = path.join(runDir, fileName);
-      saveJson(filePath, payload);
-      return {
-        clusterId: payload.ClusterId,
-        pointCount: payload.PointCount,
-        compactnessPercent: payload.CompattezzaPercentuale,
-        meanDistanceKm: payload.DistanzaMediaKm,
-        referenceRadiusKm: payload.RaggioRiferimentoKm,
-        fileName,
-        path: path.relative(__dirname, filePath)
-      };
-    })
+    files,
+    noise: {
+      pointCount: noisePayload.PointCount,
+      fileName: noiseFileName,
+      path: path.relative(__dirname, noiseFilePath)
+    }
   };
 }
 function summarizeExecutionSet(set = {}) {
@@ -741,6 +916,14 @@ function getPoiRunById(id) {
   if (!runId) return null;
   return getPoiRuns().find(item => item.id === runId) || null;
 }
+function resolvePoiRunArtifactsDirectory(run) {
+  const directory = run?.artifacts?.directory;
+  if (!directory) return null;
+  const absolutePath = path.resolve(__dirname, String(directory));
+  const allowedPrefix = `${path.resolve(POI_CLUSTER_DIR)}${path.sep}`;
+  if (!absolutePath.startsWith(allowedPrefix)) return null;
+  return { absolutePath };
+}
 function resolvePoiClusterFile(run, clusterId) {
   const numericClusterId = Number(clusterId);
   if (!Number.isFinite(numericClusterId)) return null;
@@ -752,6 +935,16 @@ function resolvePoiClusterFile(run, clusterId) {
   if (!absolutePath.startsWith(allowedPrefix)) return null;
   return {
     file,
+    absolutePath
+  };
+}
+function resolvePoiNoiseFile(run) {
+  const noise = run?.artifacts?.noise || null;
+  if (!noise?.path) return null;
+  const absolutePath = path.resolve(__dirname, String(noise.path));
+  const allowedPrefix = `${path.resolve(POI_CLUSTER_DIR)}${path.sep}`;
+  if (!absolutePath.startsWith(allowedPrefix)) return null;
+  return {
     absolutePath
   };
 }
@@ -780,6 +973,8 @@ async function executePoiRun(executionSet) {
     artifacts: null,
     error: null
   };
+  const control = createPoiRunControl();
+  currentPoiRunControl = control;
 
   updatePoiRunState({
     running: true,
@@ -866,7 +1061,7 @@ async function executePoiRun(executionSet) {
           filesTotal: 0
         }
       });
-    });
+    }, control);
     updatePoiRunState({
       progress: rows.length ? 30 : 100,
       message: `Lettura completata: ${rows.length} punti trovati`,
@@ -987,11 +1182,12 @@ async function executePoiRun(executionSet) {
         filesTotal: 0
       }
     });
-    const { clusters, noiseCount, stats } = await runDbscan(
+    const { clusters, noiseCount, stats, noiseIndexes } = await runDbscan(
       rows,
       Number(executionSet.dbscan?.eps),
       Number(executionSet.dbscan?.minPoints),
-      reportDbscanProgress
+      reportDbscanProgress,
+      control
     );
 
     const clusteredPointCount = clusters.reduce((sum, cluster) => sum + cluster.length, 0);
@@ -1031,29 +1227,37 @@ async function executePoiRun(executionSet) {
         filesTotal: clusters.length
       }
     });
-    const artifacts = writePoiClusterFiles(runId, executionSet.name, clusters, rows);
-    artifacts.files.forEach((_, index) => {
-      if (!artifacts.files.length) return;
-      const ratio = (index + 1) / artifacts.files.length;
-      updatePoiRunState({
-        progress: 86 + Math.round(ratio * 11),
-        message: `Scrittura file cluster (${index + 1}/${artifacts.files.length})`,
-        stage: 'writing',
-        details: {
-          totalPoints: rows.length,
-          rowsRead: rows.length,
-          scannedPoints: stats.scannedPoints,
-          neighborhoodsCalculated: stats.neighborhoodsCalculated,
-          clustersFound: clusters.length,
-          assignedPointCount: clusteredPointCount,
-          noisePointCount: noiseCount,
-          queueProcessed: stats.queueProcessed,
-          currentClusterSize: 0,
-          filesWritten: index + 1,
-          filesTotal: artifacts.files.length
-        }
-      });
-    });
+    const artifacts = await writePoiClusterFiles(
+      runId,
+      executionSet.name,
+      clusters,
+      rows,
+      noiseIndexes,
+      control,
+      progress => {
+        const ratio = progress.filesTotal > 0 ? progress.filesWritten / progress.filesTotal : 0;
+        updatePoiRunState({
+          progress: 86 + Math.round(ratio * 11),
+          message: progress.filesTotal > 0
+            ? `Scrittura file cluster (${progress.filesWritten}/${progress.filesTotal})`
+            : 'Preparazione file cluster',
+          stage: 'writing',
+          details: {
+            totalPoints: rows.length,
+            rowsRead: rows.length,
+            scannedPoints: stats.scannedPoints,
+            neighborhoodsCalculated: stats.neighborhoodsCalculated,
+            clustersFound: clusters.length,
+            assignedPointCount: clusteredPointCount,
+            noisePointCount: noiseCount,
+            queueProcessed: stats.queueProcessed,
+            currentClusterSize: 0,
+            filesWritten: progress.filesWritten,
+            filesTotal: progress.filesTotal
+          }
+        });
+      }
+    );
 
     const summary = {
       sourcePointCount: rows.length,
@@ -1104,6 +1308,43 @@ async function executePoiRun(executionSet) {
   } catch (err) {
     const finishedAt = new Date().toISOString();
     const timing = getRunTiming(startedAt, finishedAt);
+    if (control?.cancelled || isPoiRunCancellationError(err)) {
+      const reason = control?.cancelReason || String(err?.message || err);
+      if (control?.runDir) {
+        try {
+          fs.rmSync(control.runDir, { recursive: true, force: true });
+        } catch (cleanupError) {
+          console.error('Failed to clean up cancelled POI run directory', cleanupError);
+        }
+      }
+      const cancelled = {
+        ...runEntry,
+        status: 'cancelled',
+        finishedAt,
+        elapsedMs: timing.durationMs,
+        elapsedLabel: timing.durationLabel,
+        durationMs: timing.durationMs,
+        durationLabel: timing.durationLabel,
+        message: reason,
+        summary: null,
+        artifacts: null,
+        error: { message: reason }
+      };
+      const currentState = getPoiRunState();
+      appendPoiRun(cancelled);
+      updatePoiRunState({
+        running: false,
+        status: 'cancelled',
+        progress: currentState.progress ?? 100,
+        message: reason,
+        stage: 'cancelled',
+        finishedAt,
+        summary: null,
+        details: currentState.details || null,
+        error: cancelled.error
+      });
+      return cancelled;
+    }
     const failed = {
       ...runEntry,
       status: 'failed',
@@ -1128,6 +1369,10 @@ async function executePoiRun(executionSet) {
       error: failed.error
     });
     throw err;
+  } finally {
+    if (currentPoiRunControl === control) {
+      currentPoiRunControl = null;
+    }
   }
 }
 function normalizeReportTableName(tableName) {
@@ -1590,6 +1835,28 @@ app.get('/api/poi/run-state', (_req, res) => {
   res.json({ ok: true, state: getPoiRunState() });
 });
 
+app.post('/api/poi/run-state/cancel', (_req, res) => {
+  const state = getPoiRunState();
+  if (!state.running) {
+    return res.status(409).json({ ok: false, error: 'No running execution to cancel' });
+  }
+  if (!currentPoiRunControl) {
+    return res.status(409).json({ ok: false, error: 'Current execution is not cancelable' });
+  }
+
+  currentPoiRunControl.abort('Esecuzione interrotta dall\'utente');
+  updatePoiRunState({
+    message: 'Interruzione richiesta...',
+    stage: 'cancelling'
+  });
+
+  res.json({
+    ok: true,
+    accepted: true,
+    state: getPoiRunState()
+  });
+});
+
 app.get('/api/poi/runs/:id', (req, res) => {
   const id = String(req.params.id || '').trim();
   if (!id) return res.status(400).json({ ok: false, error: 'Missing run id' });
@@ -1597,6 +1864,32 @@ app.get('/api/poi/runs/:id', (req, res) => {
   const run = getPoiRunById(id);
   if (!run) return res.status(404).json({ ok: false, error: 'Run not found' });
   res.json({ ok: true, run });
+});
+
+app.delete('/api/poi/runs/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ ok: false, error: 'Missing run id' });
+
+  const runs = getPoiRuns();
+  const run = runs.find(item => item.id === id);
+  if (!run) return res.status(404).json({ ok: false, error: 'Run not found' });
+  if (getPoiRunState()?.running && getPoiRunState()?.runId === id) {
+    return res.status(409).json({ ok: false, error: 'Cannot delete a running execution' });
+  }
+
+  const nextRuns = runs.filter(item => item.id !== id);
+  const resolvedDir = resolvePoiRunArtifactsDirectory(run);
+  if (resolvedDir?.absolutePath && fs.existsSync(resolvedDir.absolutePath)) {
+    try {
+      fs.rmSync(resolvedDir.absolutePath, { recursive: true, force: true });
+    } catch (error) {
+      console.error('Failed to remove POI run artifacts directory', error);
+      return res.status(500).json({ ok: false, error: 'Failed to remove run artifacts' });
+    }
+  }
+
+  setPoiRuns(nextRuns);
+  res.json({ ok: true });
 });
 
 app.get('/api/poi/runs/:id/clusters/:clusterId', (req, res) => {
@@ -1633,9 +1926,41 @@ app.get('/api/poi/runs/:id/clusters/:clusterId', (req, res) => {
     saveJson(resolved.absolutePath, enrichedCluster);
   }
 
+  if (String(req.query.raw || '').toLowerCase() === '1' || String(req.query.raw || '').toLowerCase() === 'true') {
+    return res.json(enrichedCluster);
+  }
+
   res.json({
     ok: true,
     cluster: enrichedCluster
+  });
+});
+
+app.get('/api/poi/runs/:id/noise', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ ok: false, error: 'Missing run id' });
+
+  const run = getPoiRunById(id);
+  if (!run) return res.status(404).json({ ok: false, error: 'Run not found' });
+
+  const resolved = resolvePoiNoiseFile(run);
+  if (!resolved) return res.status(404).json({ ok: false, error: 'Noise file not found' });
+  if (!fs.existsSync(resolved.absolutePath)) {
+    return res.status(404).json({ ok: false, error: 'Noise file missing on disk' });
+  }
+
+  const noise = loadJson(resolved.absolutePath, null);
+  if (!noise || typeof noise !== 'object') {
+    return res.status(500).json({ ok: false, error: 'Noise file is not readable' });
+  }
+
+  if (String(req.query.raw || '').toLowerCase() === '1' || String(req.query.raw || '').toLowerCase() === 'true') {
+    return res.json(noise);
+  }
+
+  res.json({
+    ok: true,
+    noise
   });
 });
 
