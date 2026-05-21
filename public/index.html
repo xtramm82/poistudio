@@ -372,11 +372,18 @@
       flex-direction: column;
       align-items: flex-start;
     }
+    #executionSetFilters.toggle-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
     .switch {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       padding: 8px 12px;
+      width: 100%;
       border-radius: 999px;
       border: 1px solid rgba(120, 113, 108, 0.14);
       background: white;
@@ -921,6 +928,89 @@
       min-width: 0;
       flex: 1;
     }
+    .cluster-item-pie {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0 42%, transparent 43%), linear-gradient(135deg, #e5e7eb, #d1d5db);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48), 0 8px 18px rgba(120, 113, 108, 0.08);
+      overflow: hidden;
+    }
+    .cluster-item-pie::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: inset 0 0 0 1px rgba(120, 113, 108, 0.08);
+      pointer-events: none;
+    }
+    .cluster-item-pie.empty {
+      background: radial-gradient(circle at center, #f3f4f6 0 45%, #e5e7eb 46% 100%);
+    }
+    .cluster-pie-tooltip {
+      position: fixed;
+      z-index: 1000;
+      min-width: 210px;
+      max-width: 280px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 113, 108, 0.16);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 16px 36px rgba(120, 113, 108, 0.18);
+      backdrop-filter: blur(12px) saturate(120%);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 120ms ease, transform 120ms ease;
+      color: var(--text);
+    }
+    .cluster-pie-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .cluster-pie-tooltip-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .cluster-pie-tooltip-list {
+      display: grid;
+      gap: 6px;
+    }
+    .cluster-pie-tooltip-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.84rem;
+      line-height: 1.25;
+    }
+    .cluster-pie-tooltip-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.65);
+      flex: 0 0 auto;
+    }
+    .cluster-pie-tooltip-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    .cluster-pie-tooltip-meta {
+      white-space: nowrap;
+      color: var(--muted);
+      font-weight: 700;
+    }
     .cluster-item-header {
       min-width: 0;
       flex: 1;
@@ -1026,6 +1116,7 @@
       .hero { padding: 18px; }
       .card { padding: 14px; }
       .grid-2 { grid-template-columns: 1fr; }
+      #executionSetFilters.toggle-group { grid-template-columns: 1fr; }
       .progress-stats { grid-template-columns: 1fr; }
       .result-grid { grid-template-columns: 1fr; }
       .result-action .btn { min-width: 100%; }
@@ -1093,7 +1184,7 @@
         </div>
         <div class="grid-2">
           <div class="field">
-            <label for="executionDbscanEps">Epsilon</label>
+            <label for="executionDbscanEps">Epsilon (km)</label>
             <input id="executionDbscanEps" type="number" min="0" step="0.01" placeholder="0.5">
           </div>
           <div class="field">
@@ -1261,6 +1352,7 @@
       </div>
     </section>
   </div>
+  <div class="cluster-pie-tooltip" id="clusterPieTooltip" hidden></div>
 
   <script
     src="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.js"
@@ -1285,6 +1377,15 @@
       [5, '5 - Safety'],
       [6, '6 - Other (absence os insurance, certificates, etc)']
     ];
+    const INFRACTION_PIE_COLORS = {
+      0: '#64748b',
+      1: '#f97316',
+      2: '#ef4444',
+      3: '#3b82f6',
+      4: '#14b8a6',
+      5: '#22c55e',
+      6: '#a855f7'
+    };
 
     const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
     const MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.mapLayerGroups.v1';
@@ -1447,6 +1548,8 @@
       runMapNoiseEnabled: false,
       runMapNoisePayload: null,
       runMapNoiseLayer: null,
+      clusterPieTooltip: null,
+      clusterPieTooltipTarget: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
       runMapClusterBounds: {}
     };
@@ -1595,9 +1698,8 @@
       const parts = [];
       const dbscan = set.dbscan || {};
       const filters = set.filters || {};
-      parts.push(`eps ${dbscan.eps ?? 'n/d'}`);
+      parts.push(`eps ${dbscan.eps ?? 'n/d'} km`);
       parts.push(`minPoints ${dbscan.minPoints ?? 'n/d'}`);
-      parts.push('eps in km');
       if (filters.citta) parts.push(filters.citta);
       if (Array.isArray(filters.idtipoinfrazione) && filters.idtipoinfrazione.length) {
         parts.push(filters.idtipoinfrazione.map(getInfractionLabel).join(', '));
@@ -1784,6 +1886,163 @@
       return palette[index];
     }
 
+    function getInfractionPieColor(value) {
+      return INFRACTION_PIE_COLORS[Number(value)] || '#94a3b8';
+    }
+
+    function buildClusterInfractionPieData(counts = {}) {
+      const entries = infractionOptions
+        .map(([id, label]) => {
+          const value = Math.max(0, Number(counts?.[id] ?? counts?.[String(id)] ?? 0) || 0);
+          return {
+            id: Number(id),
+            label,
+            value,
+            color: getInfractionPieColor(id)
+          };
+        })
+        .filter(entry => entry.value > 0);
+
+      const total = entries.reduce((sum, entry) => sum + entry.value, 0);
+      if (!total) {
+        return {
+          total: 0,
+          segments: [],
+          gradient: '',
+          title: 'Nessuna distribuzione disponibile'
+        };
+      }
+
+      let cursor = 0;
+      const segments = entries.map(entry => {
+        const percent = (entry.value / total) * 100;
+        const start = cursor;
+        const end = cursor + percent;
+        cursor = end;
+        return {
+          ...entry,
+          percent,
+          start,
+          end
+        };
+      });
+      const gradient = segments.map(segment => `${segment.color} ${segment.start}% ${segment.end}%`).join(', ');
+      const title = segments.map(segment => `${segment.label}: ${segment.value} (${Math.round(segment.percent)}%)`).join(' · ');
+      return { total, segments, gradient, title };
+    }
+
+    function truncateInfractionLabel(label, maxLength = 15) {
+      const text = String(label || '');
+      return text.length > maxLength ? `${text.slice(0, maxLength)}` : text;
+    }
+
+    function ensureClusterPieTooltip() {
+      if (state.clusterPieTooltip && document.body.contains(state.clusterPieTooltip)) {
+        return state.clusterPieTooltip;
+      }
+      state.clusterPieTooltip = document.getElementById('clusterPieTooltip');
+      if (!state.clusterPieTooltip && document.body) {
+        const el = document.createElement('div');
+        el.id = 'clusterPieTooltip';
+        el.className = 'cluster-pie-tooltip';
+        el.hidden = true;
+        document.body.appendChild(el);
+        state.clusterPieTooltip = el;
+      }
+      return state.clusterPieTooltip;
+    }
+
+    function isWithinClusterPieTooltip(node) {
+      return Boolean(node && state.clusterPieTooltip && state.clusterPieTooltip.contains(node));
+    }
+
+    function hideClusterPieTooltip() {
+      const tooltip = ensureClusterPieTooltip();
+      if (!tooltip) return;
+      tooltip.classList.remove('visible');
+      tooltip.hidden = true;
+      tooltip.innerHTML = '';
+      state.clusterPieTooltipTarget = null;
+    }
+
+    function showClusterPieTooltip(target, clientX, clientY) {
+      const tooltip = ensureClusterPieTooltip();
+      if (!tooltip || !target) return;
+      const rawCounts = target.dataset.infractionCounts || '{}';
+      let counts = {};
+      try {
+        counts = JSON.parse(rawCounts);
+      } catch {
+        counts = {};
+      }
+      const data = buildClusterInfractionPieData(counts);
+      if (!data.total) {
+        tooltip.innerHTML = `
+          <div class="cluster-pie-tooltip-title">Distribuzione</div>
+          <div class="cluster-pie-tooltip-list">
+            <div class="cluster-pie-tooltip-item">
+              <span class="cluster-pie-tooltip-swatch" style="background:#cbd5e1;"></span>
+              <span class="cluster-pie-tooltip-label">Nessun dato disponibile</span>
+              <span class="cluster-pie-tooltip-meta">0%</span>
+            </div>
+          </div>
+        `;
+      } else {
+        tooltip.innerHTML = `
+          <div class="cluster-pie-tooltip-title">Distribuzione idtipoinfrazione</div>
+          <div class="cluster-pie-tooltip-list">
+            ${data.segments.map(segment => `
+              <div class="cluster-pie-tooltip-item">
+                <span class="cluster-pie-tooltip-swatch" style="background:${escapeHtml(segment.color)};"></span>
+                <span class="cluster-pie-tooltip-label">${escapeHtml(truncateInfractionLabel(getInfractionLabel(segment.id), 15))}</span>
+                <span class="cluster-pie-tooltip-meta">${escapeHtml(Math.round(segment.percent))}%</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      tooltip.hidden = false;
+      tooltip.classList.add('visible');
+      state.clusterPieTooltipTarget = target;
+
+      const margin = 14;
+      const rect = target.getBoundingClientRect();
+      tooltip.style.visibility = 'hidden';
+      tooltip.style.left = '0px';
+      tooltip.style.top = '0px';
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let left = clientX + 16;
+      let top = clientY + 16;
+      if (left + tooltipRect.width + margin > window.innerWidth) {
+        left = rect.left - tooltipRect.width - 16;
+      }
+      if (top + tooltipRect.height + margin > window.innerHeight) {
+        top = window.innerHeight - tooltipRect.height - margin;
+      }
+      left = Math.max(margin, left);
+      top = Math.max(margin, top);
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.style.visibility = 'visible';
+    }
+
+    function buildClusterInfractionPieMarkup(counts = {}) {
+      const data = buildClusterInfractionPieData(counts);
+      if (!data.total) {
+        return '<div class="cluster-item-pie empty" role="img" aria-label="Nessuna distribuzione disponibile" title="Nessuna distribuzione disponibile" data-infraction-counts="{}"></div>';
+      }
+      return `
+        <div
+          class="cluster-item-pie"
+          role="img"
+          aria-label="${escapeHtml(data.title)}"
+          title="${escapeHtml(data.title)}"
+          data-infraction-counts="${escapeHtml(JSON.stringify(counts || {}))}"
+          style="background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0 42%, transparent 43%), conic-gradient(${data.gradient});"
+        ></div>
+      `;
+    }
+
     function clearRunMapLayers() {
       if (!state.runMap) return;
       Object.values(state.runMapClusterLayers).forEach(entry => {
@@ -1863,9 +2122,12 @@
         state.runMapNoiseLayer = null;
         return;
       }
-      if (state.runMapNoiseLayer?.layerId && state.runMap.getLayer(state.runMapNoiseLayer.layerId)) {
-        state.runMap.removeLayer(state.runMapNoiseLayer.layerId);
-      }
+      const layerIds = Array.isArray(state.runMapNoiseLayer?.layerIds) ? state.runMapNoiseLayer.layerIds : [];
+      layerIds.forEach(layerId => {
+        if (layerId && state.runMap.getLayer(layerId)) {
+          state.runMap.removeLayer(layerId);
+        }
+      });
       if (state.runMapNoiseLayer?.sourceId && state.runMap.getSource(state.runMapNoiseLayer.sourceId)) {
         state.runMap.removeSource(state.runMapNoiseLayer.sourceId);
       }
@@ -1875,7 +2137,9 @@
     function ensureNoiseLayerOnMap(noise) {
       if (!state.runMap || !noise) return;
       const sourceId = 'noise-source';
-      const layerId = 'noise-layer';
+      const clusterLayerId = 'noise-clusters';
+      const countLayerId = 'noise-cluster-count';
+      const pointLayerId = 'noise-points';
       const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : []);
 
       if (state.runMap.getSource(sourceId)) {
@@ -1883,18 +2147,29 @@
       } else {
         state.runMap.addSource(sourceId, {
           type: 'geojson',
+          cluster: true,
+          clusterRadius: 18,
+          clusterMaxZoom: 24,
           data
         });
       }
 
-      if (!state.runMap.getLayer(layerId)) {
+      if (!state.runMap.getLayer(clusterLayerId)) {
         state.runMap.addLayer({
-          id: layerId,
+          id: clusterLayerId,
           type: 'circle',
           source: sourceId,
+          filter: ['has', 'point_count'],
           paint: {
             'circle-color': '#111111',
-            'circle-radius': 4,
+            'circle-radius': [
+              'step',
+              ['get', 'point_count'],
+              9,
+              10, 11,
+              25, 14,
+              50, 17
+            ],
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1,
             'circle-opacity': 0.92
@@ -1902,7 +2177,40 @@
         });
       }
 
-      state.runMapNoiseLayer = { sourceId, layerId };
+      if (!state.runMap.getLayer(countLayerId)) {
+        state.runMap.addLayer({
+          id: countLayerId,
+          type: 'symbol',
+          source: sourceId,
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+            'text-size': 12
+          },
+          paint: {
+            'text-color': '#ffffff'
+          }
+        });
+      }
+
+      if (!state.runMap.getLayer(pointLayerId)) {
+        state.runMap.addLayer({
+          id: pointLayerId,
+          type: 'circle',
+          source: sourceId,
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': '#111111',
+            'circle-radius': 6,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 0.92
+          }
+        });
+      }
+
+      state.runMapNoiseLayer = { sourceId, layerIds: [clusterLayerId, countLayerId, pointLayerId] };
     }
 
     function rehydrateVisibleNoise() {
@@ -1966,7 +2274,9 @@
     function ensureClusterLayerOnMap(clusterId, cluster) {
       if (!state.runMap || !cluster) return;
       const sourceId = `cluster-source-${clusterId}`;
-      const layerId = `cluster-layer-${clusterId}`;
+      const clusterLayerId = `cluster-clusters-${clusterId}`;
+      const countLayerId = `cluster-count-${clusterId}`;
+      const pointLayerId = `cluster-points-${clusterId}`;
       const data = buildClusterGeoJson(cluster);
       const color = getClusterColor(cluster.ClusterId);
 
@@ -1975,18 +2285,62 @@
       } else {
         state.runMap.addSource(sourceId, {
           type: 'geojson',
+          cluster: true,
+          clusterRadius: 18,
+          clusterMaxZoom: 24,
           data
         });
       }
 
-      if (!state.runMap.getLayer(layerId)) {
+      if (!state.runMap.getLayer(clusterLayerId)) {
         state.runMap.addLayer({
-          id: layerId,
+          id: clusterLayerId,
           type: 'circle',
           source: sourceId,
+          filter: ['has', 'point_count'],
           paint: {
             'circle-color': color,
-            'circle-radius': 5,
+            'circle-radius': [
+              'step',
+              ['get', 'point_count'],
+              10,
+              10, 12,
+              25, 15,
+              50, 18
+            ],
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1,
+            'circle-opacity': 0.82
+          }
+        });
+      }
+
+      if (!state.runMap.getLayer(countLayerId)) {
+        state.runMap.addLayer({
+          id: countLayerId,
+          type: 'symbol',
+          source: sourceId,
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+            'text-size': 12
+          },
+          paint: {
+            'text-color': '#ffffff'
+          }
+        });
+      }
+
+      if (!state.runMap.getLayer(pointLayerId)) {
+        state.runMap.addLayer({
+          id: pointLayerId,
+          type: 'circle',
+          source: sourceId,
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': color,
+            'circle-radius': 7.5,
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1,
             'circle-opacity': 0.72
@@ -1994,7 +2348,7 @@
         });
       }
 
-      state.runMapClusterLayers[clusterId] = { sourceId, layerId };
+      state.runMapClusterLayers[clusterId] = { sourceId, layerIds: [clusterLayerId, countLayerId, pointLayerId] };
       state.runMapClusterBounds[clusterId] = buildClusterBounds(cluster);
     }
 
@@ -2002,9 +2356,11 @@
       if (!state.runMap) return;
       const entry = state.runMapClusterLayers[clusterId];
       if (!entry) return;
-      if (entry.layerId && state.runMap.getLayer(entry.layerId)) {
-        state.runMap.removeLayer(entry.layerId);
-      }
+      (Array.isArray(entry.layerIds) ? entry.layerIds : []).forEach(layerId => {
+        if (layerId && state.runMap.getLayer(layerId)) {
+          state.runMap.removeLayer(layerId);
+        }
+      });
       if (entry.sourceId && state.runMap.getSource(entry.sourceId)) {
         state.runMap.removeSource(entry.sourceId);
       }
@@ -2185,6 +2541,7 @@
       state.runMapNoisePayload = null;
       clearRunMapNoiseLayer();
       clearRunMapLayers();
+      hideClusterPieTooltip();
       updateRunMapEmptyState();
       if (els.mapPageStatus) {
         setInlineStatus(
@@ -2242,6 +2599,7 @@
         <div class="cluster-item">
           <div class="cluster-item-top">
             <div class="cluster-item-lead">
+              ${buildClusterInfractionPieMarkup(file.infractionCounts || file.IdTipoInfrazioneCounts || {})}
               <label class="cluster-toggle">
                 <input type="checkbox" data-cluster-id="${escapeHtml(file.clusterId)}" aria-label="Mostra sulla mappa">
               </label>
@@ -2925,6 +3283,28 @@
       }
       if (deleteButton) {
         void deleteRunLog(deleteButton.dataset.runDelete);
+      }
+    });
+    els.runMapClusters.addEventListener('pointerover', event => {
+      const pie = event.target.closest('.cluster-item-pie');
+      if (!pie) return;
+      showClusterPieTooltip(pie, event.clientX, event.clientY);
+    });
+    els.runMapClusters.addEventListener('pointermove', event => {
+      const pie = event.target.closest('.cluster-item-pie');
+      if (!pie) return;
+      if (state.clusterPieTooltipTarget !== pie) {
+        showClusterPieTooltip(pie, event.clientX, event.clientY);
+        return;
+      }
+      showClusterPieTooltip(pie, event.clientX, event.clientY);
+    });
+    els.runMapClusters.addEventListener('pointerout', event => {
+      const fromPie = event.target.closest('.cluster-item-pie');
+      if (!fromPie) return;
+      const toNode = event.relatedTarget;
+      if (fromPie === state.clusterPieTooltipTarget && !fromPie.contains(toNode) && !isWithinClusterPieTooltip(toNode)) {
+        hideClusterPieTooltip();
       }
     });
     if (els.mapSettingsBtn) {

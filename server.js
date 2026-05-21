@@ -271,7 +271,10 @@ function enrichClusterFileRecord(file = {}) {
   const compactness = Number(nextFile.compactnessPercent);
   const meanDistanceKm = Number(nextFile.meanDistanceKm);
   const referenceRadiusKm = Number(nextFile.referenceRadiusKm);
-  if (Number.isFinite(compactness) && Number.isFinite(meanDistanceKm) && Number.isFinite(referenceRadiusKm)) {
+  const infractionCounts = nextFile.infractionCounts && typeof nextFile.infractionCounts === 'object'
+    ? nextFile.infractionCounts
+    : null;
+  if (Number.isFinite(compactness) && Number.isFinite(meanDistanceKm) && Number.isFinite(referenceRadiusKm) && infractionCounts) {
     return { file: nextFile, changed: false };
   }
 
@@ -287,9 +290,13 @@ function enrichClusterFileRecord(file = {}) {
   }
 
   const metrics = calculateClusterCompactness(Array.isArray(cluster.Punti) ? cluster.Punti : []);
+  const counts = cluster.IdTipoInfrazioneCounts && typeof cluster.IdTipoInfrazioneCounts === 'object'
+    ? cluster.IdTipoInfrazioneCounts
+    : buildClusterInfractionCounts(Array.isArray(cluster.Punti) ? cluster.Punti : []);
   nextFile.compactnessPercent = Number.isFinite(compactness) ? compactness : metrics.compactnessPercent;
   nextFile.meanDistanceKm = Number.isFinite(meanDistanceKm) ? meanDistanceKm : metrics.meanDistanceKm;
   nextFile.referenceRadiusKm = Number.isFinite(referenceRadiusKm) ? referenceRadiusKm : metrics.referenceRadiusKm;
+  nextFile.infractionCounts = infractionCounts || counts;
   return { file: nextFile, changed: true, cluster, metrics, absolutePath };
 }
 function backfillPoiRunArtifacts() {
@@ -312,7 +319,8 @@ function backfillPoiRunArtifacts() {
           ...result.cluster,
           CompattezzaPercentuale: result.cluster.CompattezzaPercentuale ?? result.metrics.compactnessPercent,
           DistanzaMediaKm: result.cluster.DistanzaMediaKm ?? result.metrics.meanDistanceKm,
-          RaggioRiferimentoKm: result.cluster.RaggioRiferimentoKm ?? result.metrics.referenceRadiusKm
+          RaggioRiferimentoKm: result.cluster.RaggioRiferimentoKm ?? result.metrics.referenceRadiusKm,
+          IdTipoInfrazioneCounts: result.file.infractionCounts || result.cluster.IdTipoInfrazioneCounts || buildClusterInfractionCounts(Array.isArray(result.cluster.Punti) ? result.cluster.Punti : [])
         };
         saveJson(result.absolutePath, nextCluster);
       }
@@ -455,6 +463,14 @@ function calculateClusterCompactness(clusterPoints = []) {
     referenceRadiusKm,
     compactnessPercent
   };
+}
+function buildClusterInfractionCounts(points = []) {
+  return points.reduce((acc, point) => {
+    const id = Number.parseInt(String(point?.IdTipoInfrazione ?? ''), 10);
+    if (!Number.isInteger(id)) return acc;
+    acc[id] = (acc[id] || 0) + 1;
+    return acc;
+  }, {});
 }
 function buildPoiSourceWhereClauses(filters = {}) {
   const where = [
@@ -829,6 +845,7 @@ function buildClusterPayload(points, indexes, clusterId) {
   const totalLat = latitudes.reduce((sum, value) => sum + value, 0);
   const totalLon = longitudes.reduce((sum, value) => sum + value, 0);
   const compactness = calculateClusterCompactness(clusterPoints);
+  const infractionCounts = buildClusterInfractionCounts(clusterPoints);
 
   return {
     ClusterId: clusterId,
@@ -842,6 +859,7 @@ function buildClusterPayload(points, indexes, clusterId) {
     CompattezzaPercentuale: compactness.compactnessPercent,
     DistanzaMediaKm: compactness.meanDistanceKm,
     RaggioRiferimentoKm: compactness.referenceRadiusKm,
+    IdTipoInfrazioneCounts: infractionCounts,
     Punti: clusterPoints
   };
 }
@@ -879,6 +897,7 @@ async function writePoiClusterFiles(runId, setName, clusters, points, noiseIndex
       compactnessPercent: payload.CompattezzaPercentuale,
       meanDistanceKm: payload.DistanzaMediaKm,
       referenceRadiusKm: payload.RaggioRiferimentoKm,
+      infractionCounts: payload.IdTipoInfrazioneCounts,
       fileName,
       path: path.relative(__dirname, filePath)
     });
