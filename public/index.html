@@ -643,7 +643,7 @@
     .result-grid {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(110px, auto);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       align-items: stretch;
     }
     .result-metric {
@@ -662,25 +662,6 @@
       font-size: 1rem;
       font-weight: 800;
       color: var(--text);
-    }
-    .result-action {
-      display: flex;
-      align-items: stretch;
-      justify-content: flex-end;
-      padding: 0;
-      min-width: 0;
-      background: transparent;
-      border: 0;
-      box-shadow: none;
-    }
-    .result-action .btn {
-      width: 100%;
-      height: 100%;
-      min-width: 110px;
-      justify-content: center;
-      align-items: center;
-      display: inline-flex;
-      padding: 0 14px;
     }
     .file-list {
       display: flex;
@@ -735,6 +716,13 @@
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px 14px;
+    }
+    .run-log-head-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
     }
     .run-log-head .box-head-main {
       gap: 6px;
@@ -814,6 +802,32 @@
       flex-wrap: nowrap;
       margin-left: auto;
     }
+    .run-log-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 0;
+      width: auto;
+    }
+    .run-log-delete-btn {
+      width: auto;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 9px 12px;
+    }
+    .run-log-map-btn {
+      width: auto;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 9px 12px;
+    }
     .run-log-body {
       display: grid;
       gap: 10px;
@@ -821,15 +835,6 @@
       padding: 14px 10px 10px;
       border-top: 1px solid rgba(120, 113, 108, 0.1);
       background: transparent;
-    }
-    .run-log-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 2px;
-    }
-    .run-log-footer .btn {
-      padding: 9px 12px;
-      min-width: 120px;
     }
     .run-log-body[hidden] {
       display: none !important;
@@ -843,7 +848,19 @@
       gap: 16px;
       align-items: start;
     }
+    .map-workspace {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      align-content: start;
+    }
     .map-stage {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      align-content: start;
+    }
+    .map-stage-main {
       position: relative;
       min-height: 560px;
       border-radius: 20px;
@@ -876,6 +893,190 @@
       box-shadow: 0 16px 34px rgba(120, 113, 108, 0.12);
       pointer-events: none;
       backdrop-filter: blur(4px);
+    }
+    .map-point-detail {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 12px 28px rgba(120, 113, 108, 0.08);
+      min-width: 0;
+    }
+    .map-point-detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+    .map-point-detail-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .map-point-detail-kicker {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .map-point-detail-title {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .map-point-detail-subtitle {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .map-point-detail-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .map-point-detail-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: rgba(120, 113, 108, 0.08);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .map-point-detail-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .map-point-detail-clear,
+    .map-point-detail-card-remove {
+      width: auto;
+      min-width: 0;
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+    .map-point-detail-scroll {
+      max-height: min(42vh, 420px);
+      overflow: auto;
+      padding-right: 4px;
+      margin-right: -4px;
+    }
+    .map-point-detail-list {
+      display: grid;
+      gap: 12px;
+    }
+    .map-point-detail-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 113, 108, 0.12);
+      background: rgba(249, 250, 251, 0.94);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+      min-width: 0;
+    }
+    .map-point-detail-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+    .map-point-detail-card-copy {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .map-point-detail-card-kicker {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .map-point-detail-card-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .map-point-detail-card-subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .map-point-detail-card-actions {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .map-point-detail-card-index {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: rgba(120, 113, 108, 0.08);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .map-point-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+    }
+    .map-point-detail-item {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(120, 113, 108, 0.12);
+      background: rgba(249, 250, 251, 0.92);
+      min-width: 0;
+    }
+    .map-point-detail-label {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .map-point-detail-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .map-point-detail-empty {
+      padding: 2px 2px 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
     }
     .map-empty[hidden] {
       display: none !important;
@@ -1043,6 +1244,7 @@
       align-items: flex-start;
       gap: 8px;
       flex-shrink: 0;
+      justify-content: flex-end;
     }
     .cluster-json-link {
       min-height: 32px;
@@ -1063,14 +1265,23 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
       flex-shrink: 0;
     }
     .cluster-toggle input {
-      accent-color: var(--accent);
-      margin: 0;
-      width: 16px;
-      height: 16px;
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cluster-toggle .switch-track {
+      width: 52px;
+      height: 32px;
+    }
+    .cluster-toggle .switch-thumb {
+      width: 26px;
+      height: 26px;
+    }
+    .cluster-toggle .switch-input:checked + .switch-track .switch-thumb {
+      transform: translateX(20px);
     }
     .map-sidebar-actions {
       display: flex;
@@ -1088,14 +1299,23 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
       flex-shrink: 0;
     }
     .noise-toggle input {
-      accent-color: #111111;
-      margin: 0;
-      width: 16px;
-      height: 16px;
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .noise-toggle .switch-track {
+      width: 52px;
+      height: 32px;
+    }
+    .noise-toggle .switch-thumb {
+      width: 26px;
+      height: 26px;
+    }
+    .noise-toggle .switch-input:checked + .switch-track .switch-thumb {
+      transform: translateX(20px);
     }
     .collapsible-content[hidden] {
       display: none !important;
@@ -1108,7 +1328,7 @@
       .selector-card { width: 100%; }
       .content-box { width: 100%; }
       .map-layout { grid-template-columns: 1fr; }
-      .map-stage, .results-map { min-height: 420px; height: 420px; }
+      .map-stage-main, .results-map { min-height: 420px; height: 420px; }
       .cluster-list { max-height: none; }
     }
     @media (max-width: 720px) {
@@ -1126,13 +1346,20 @@
         grid-template-columns: 1fr;
         align-items: start;
       }
+      .run-log-head-row {
+        grid-template-columns: 1fr;
+      }
       .run-log-right {
         width: 100%;
         flex-wrap: wrap;
         justify-content: flex-start;
         margin-left: 0;
       }
-      .map-stage, .results-map { min-height: 360px; height: 360px; }
+      .run-log-actions {
+        width: auto;
+      }
+      .map-stage-main, .results-map { min-height: 360px; height: 360px; }
+      .map-point-detail-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1293,6 +1520,10 @@
                   <span>Nomi strade</span>
                 </label>
                 <label class="map-setting-option">
+                  <input type="checkbox" name="mapLayerToggle" value="pedestrian_paths">
+                  <span>Percorsi pedonali</span>
+                </label>
+                <label class="map-setting-option">
                   <input type="checkbox" name="mapLayerToggle" value="road_shields">
                   <span>Cartelli stradali</span>
                 </label>
@@ -1318,9 +1549,16 @@
           </div>
         </div>
         <div class="map-layout">
-          <div class="map-stage">
-            <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
-            <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
+          <div class="map-workspace">
+            <div class="map-stage">
+              <div class="map-stage-main">
+                <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
+                <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
+              </div>
+              <div class="map-point-detail" id="runMapPointDetail" aria-live="polite">
+                <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.</div>
+              </div>
+            </div>
           </div>
           <div class="map-sidebar">
             <div class="map-sidebar-head">
@@ -1333,9 +1571,6 @@
             <div class="cluster-item cluster-noise" id="noisePointsBox">
               <div class="cluster-item-top">
                 <div class="cluster-item-lead">
-                  <label class="noise-toggle">
-                    <input type="checkbox" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
-                  </label>
                   <div class="cluster-item-header">
                     <div class="cluster-item-title-row">
                       <div class="cluster-item-title">Punti fuori cluster</div>
@@ -1343,6 +1578,12 @@
                     </div>
                     <div class="cluster-item-meta" id="noisePointsMeta">Punti non assegnati a nessun cluster</div>
                   </div>
+                </div>
+                <div class="cluster-item-actions">
+                  <label class="noise-toggle" aria-label="Mostra punti fuori cluster">
+                    <input type="checkbox" class="switch-input" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
+                    <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -1433,6 +1674,16 @@
           'highway-name-path',
           'highway-name-minor',
           'highway-name-major'
+        ]
+      },
+      {
+        id: 'pedestrian_paths',
+        label: 'Percorsi pedonali',
+        layerIds: [
+          'tunnel-path',
+          'highway-path',
+          'bridge-path-casing',
+          'bridge-path'
         ]
       },
       {
@@ -1548,11 +1799,13 @@
       runMapNoiseEnabled: false,
       runMapNoisePayload: null,
       runMapNoiseLayer: null,
+      runMapSelectedPoints: [],
+      runMapSelectionToken: 0,
       clusterPieTooltip: null,
       clusterPieTooltipTarget: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
       runMapClusterBounds: {}
-    };
+  };
 
     const els = {
       sqlConnectionString: document.getElementById('sqlConnectionString'),
@@ -1583,6 +1836,7 @@
       mapSettingsBtn: document.getElementById('mapSettingsBtn'),
       mapSettingsMenu: document.getElementById('mapSettingsMenu'),
       runMapStatus: document.getElementById('runMapStatus'),
+      runMapPointDetail: document.getElementById('runMapPointDetail'),
       clusterBulkToggle: document.getElementById('clusterBulkToggle'),
       noisePointsToggle: document.getElementById('noisePointsToggle'),
       noisePointsCount: document.getElementById('noisePointsCount'),
@@ -2087,8 +2341,11 @@
     }
 
     function buildClusterGeoJson(cluster) {
-      return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], () => ({
-        clusterId: cluster.ClusterId
+      return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], point => ({
+        ...point,
+        clusterId: cluster.ClusterId,
+        sourceType: 'cluster',
+        sourceLabel: `Cluster ${cluster.ClusterId}`
       }));
     }
 
@@ -2111,6 +2368,399 @@
         type: 'FeatureCollection',
         features
       };
+    }
+
+    function formatRunMapPointValue(value) {
+      if (value == null || value === '') return '';
+      if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+      return String(value);
+    }
+
+    function formatRunMapPointCoordinate(value) {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric.toFixed(6) : '';
+    }
+
+    function getRunMapSelectableLayerIds() {
+      if (!state.runMap) return [];
+      const layerIds = [];
+      Object.values(state.runMapClusterLayers).forEach(entry => {
+        const entryLayerIds = Array.isArray(entry?.layerIds) ? entry.layerIds : [];
+        entryLayerIds.forEach(layerId => {
+          if (layerId && state.runMap.getLayer(layerId)) {
+            layerIds.push(layerId);
+          }
+        });
+      });
+      const noiseLayerIds = Array.isArray(state.runMapNoiseLayer?.layerIds) ? state.runMapNoiseLayer.layerIds : [];
+      noiseLayerIds.forEach(layerId => {
+        if (layerId && state.runMap.getLayer(layerId)) {
+          layerIds.push(layerId);
+        }
+      });
+      return layerIds;
+    }
+
+    function getRunMapPointSelectionLabel(point = {}) {
+      if (String(point.sourceType || '') === 'noise') return 'Punti fuori cluster';
+      if (point.clusterId != null) return `Cluster ${point.clusterId}`;
+      return 'Punto selezionato';
+    }
+
+    function getRunMapPointSelectionKey(point = {}) {
+      return [
+        String(point.sourceType || ''),
+        String(point.selectedAggregateClusterId ?? point.clusterId ?? ''),
+        String(point.selectedAggregateIndex ?? ''),
+        String(point.Id ?? ''),
+        String(point.IdDataentry ?? ''),
+        String(point.IdOcr ?? ''),
+        String(point.Latitudine ?? ''),
+        String(point.Longitudine ?? '')
+      ].join('|');
+    }
+
+    function getRunMapSelectedPoints() {
+      return Array.isArray(state.runMapSelectedPoints) ? state.runMapSelectedPoints : [];
+    }
+
+    function renderRunMapPointDetail(points = []) {
+      if (!els.runMapPointDetail) return;
+      const selectedPoints = Array.isArray(points) ? points : [];
+      if (!selectedPoints.length) {
+        els.runMapPointDetail.innerHTML = '<div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.</div>';
+        return;
+      }
+
+      const renderPointCard = (point, index) => {
+        const pointIdText = formatRunMapPointValue(point.Id);
+        const title = point.IndirizzoFormattato
+          || point.Citta
+          || (point.selectedFromAggregate && Number.isFinite(Number(point.selectedAggregateClusterId ?? point.clusterId))
+            ? `Cluster ${Number(point.selectedAggregateClusterId ?? point.clusterId)}`
+            : (pointIdText ? `Punto ${pointIdText}` : 'Punto selezionato'));
+        const subtitleParts = [];
+        if (point.Citta) subtitleParts.push(point.Citta);
+        const coords = [formatRunMapPointCoordinate(point.Latitudine), formatRunMapPointCoordinate(point.Longitudine)].filter(Boolean);
+        if (coords.length === 2) subtitleParts.push(`(${coords.join(', ')})`);
+        const badges = [];
+        badges.push(`<span class="map-point-detail-chip">${escapeHtml(getRunMapPointSelectionLabel(point))}</span>`);
+        if (point.selectedFromAggregate) {
+          badges.push(`<span class="map-point-detail-chip">Aggregato · ${escapeHtml(formatCount(point.selectedAggregateCount || 0))} punti</span>`);
+        }
+        if (point.IdTipoInfrazione != null) {
+          badges.push(`<span class="map-point-detail-chip">${escapeHtml(`${point.IdTipoInfrazione} · ${getInfractionLabel(point.IdTipoInfrazione)}`)}</span>`);
+        }
+        if (pointIdText !== '') {
+          badges.push(`<span class="map-point-detail-chip">Id ${escapeHtml(pointIdText)}</span>`);
+        }
+
+        const fields = [
+          ['Id', formatRunMapPointValue(point.Id)],
+          ['IdDataentry', formatRunMapPointValue(point.IdDataentry)],
+          ['IdOcr', formatRunMapPointValue(point.IdOcr)],
+          ['Città', formatRunMapPointValue(point.Citta)],
+          ['Indirizzo', formatRunMapPointValue(point.IndirizzoFormattato)],
+          ['Data infrazione', formatRunMapPointValue(point.DataInfrazione)],
+          ['Latitudine', formatRunMapPointCoordinate(point.Latitudine)],
+          ['Longitudine', formatRunMapPointCoordinate(point.Longitudine)],
+          ['Tipo infrazione', point.IdTipoInfrazione == null ? '' : `${formatRunMapPointValue(point.IdTipoInfrazione)} · ${getInfractionLabel(point.IdTipoInfrazione)}`],
+          ['Origine', formatRunMapPointValue(point.sourceLabel || getRunMapPointSelectionLabel(point))],
+          ['Punto sorgente', point.selectedFromAggregate ? `Punto del gruppo selezionato (${formatCount(point.selectedAggregateCount || 0)} punti)` : 'Punto direttamente cliccato']
+        ].filter(([, value]) => value !== '');
+
+        return `
+          <article class="map-point-detail-card" data-run-map-point-key="${escapeHtml(getRunMapPointSelectionKey(point))}">
+            <div class="map-point-detail-card-head">
+              <div class="map-point-detail-card-copy">
+                <div class="map-point-detail-card-kicker">Punto ${escapeHtml(formatCount(index + 1))}</div>
+                <div class="map-point-detail-card-title">${escapeHtml(title)}</div>
+                ${subtitleParts.length ? `<div class="map-point-detail-card-subtitle">${escapeHtml(subtitleParts.join(' · '))}</div>` : ''}
+              </div>
+              <div class="map-point-detail-card-actions">
+                <span class="map-point-detail-card-index">${escapeHtml(getRunMapPointSelectionLabel(point))}</span>
+                <button class="btn ghost map-point-detail-card-remove" type="button" data-run-map-point-remove="${escapeHtml(getRunMapPointSelectionKey(point))}">Rimuovi</button>
+              </div>
+            </div>
+            <div class="map-point-detail-badges">
+              ${badges.join('')}
+            </div>
+            <div class="map-point-detail-grid">
+              ${fields.map(([label, value]) => `
+                <div class="map-point-detail-item">
+                  <div class="map-point-detail-label">${escapeHtml(label)}</div>
+                  <div class="map-point-detail-value">${escapeHtml(value)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        `;
+      };
+
+      els.runMapPointDetail.innerHTML = `
+        <div class="map-point-detail-head">
+          <div class="map-point-detail-copy">
+            <div class="map-point-detail-kicker">Dettagli selezionati</div>
+            <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
+            <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
+          </div>
+          <div class="map-point-detail-actions">
+            <span class="map-point-detail-chip">${escapeHtml(formatCount(selectedPoints.length))} selezionati</span>
+            <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
+          </div>
+        </div>
+        <div class="map-point-detail-scroll">
+          <div class="map-point-detail-list">
+            ${selectedPoints.map((point, index) => renderPointCard(point, index)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function setRunMapSelectedPoints(points = []) {
+      state.runMapSelectedPoints = Array.isArray(points) ? points : [];
+      renderRunMapPointDetail(state.runMapSelectedPoints);
+    }
+
+    function setRunMapSelectedPoint(point = null) {
+      setRunMapSelectedPoints(point ? [point] : []);
+    }
+
+    function clearRunMapSelectedPoints() {
+      setRunMapSelectedPoint(null);
+    }
+
+    function pruneRunMapSelectedPoints(predicate = null) {
+      if (typeof predicate !== 'function') return;
+      const current = getRunMapSelectedPoints();
+      const next = current.filter(point => !predicate(point));
+      if (next.length === current.length) return;
+      setRunMapSelectedPoints(next);
+    }
+
+    function toggleRunMapSelectedPoint(point = null) {
+      if (!point) return;
+      const key = getRunMapPointSelectionKey(point);
+      const current = getRunMapSelectedPoints();
+      const index = current.findIndex(item => getRunMapPointSelectionKey(item) === key);
+      const next = index >= 0
+        ? current.filter((_, itemIndex) => itemIndex !== index)
+        : [...current, point];
+      setRunMapSelectedPoints(next);
+    }
+
+    function addRunMapSelectedPoints(points = []) {
+      const incoming = Array.isArray(points) ? points.filter(Boolean) : [];
+      if (!incoming.length) return;
+      const current = getRunMapSelectedPoints();
+      const currentKeys = new Set(current.map(point => getRunMapPointSelectionKey(point)));
+      const next = [...current];
+      incoming.forEach(point => {
+        const key = getRunMapPointSelectionKey(point);
+        if (currentKeys.has(key)) return;
+        currentKeys.add(key);
+        next.push(point);
+      });
+      setRunMapSelectedPoints(next);
+    }
+
+    function extractRunMapPointSelection(feature = null, context = {}) {
+      const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+      const sourceId = String(context.sourceId || properties.sourceId || '');
+      const pointCount = Number(context.pointCount ?? properties.point_count ?? 0);
+      const aggregateClusterId = context.clusterId ?? properties.cluster_id ?? properties.clusterId;
+      const point = {};
+      Object.entries(properties).forEach(([key, value]) => {
+        point[key] = value;
+      });
+      if (point.clusterId != null) {
+        point.clusterId = Number(point.clusterId);
+      }
+      if (point.clusterId == null && Number.isFinite(Number(aggregateClusterId))) {
+        point.clusterId = Number(aggregateClusterId);
+      }
+      if (point.Id != null) point.Id = Number(point.Id);
+      if (point.IdDataentry != null) point.IdDataentry = Number(point.IdDataentry);
+      if (point.IdOcr != null) point.IdOcr = Number(point.IdOcr);
+      if (point.Latitudine != null) point.Latitudine = Number(point.Latitudine);
+      if (point.Longitudine != null) point.Longitudine = Number(point.Longitudine);
+      if (point.IdTipoInfrazione != null) point.IdTipoInfrazione = Number(point.IdTipoInfrazione);
+      if (!point.sourceType && sourceId) {
+        point.sourceType = sourceId.startsWith('noise') ? 'noise' : 'cluster';
+      }
+      if (!point.sourceLabel && point.sourceType === 'noise') {
+        point.sourceLabel = 'Punti fuori cluster';
+      }
+      if (pointCount > 0) {
+        point.selectedFromAggregate = true;
+        point.selectedAggregateCount = Number.isFinite(point.selectedAggregateCount)
+          ? point.selectedAggregateCount
+          : pointCount;
+        if (Number.isFinite(Number(aggregateClusterId))) {
+          point.selectedAggregateClusterId = Number(aggregateClusterId);
+        } else if (point.clusterId != null && point.selectedAggregateClusterId == null) {
+          point.selectedAggregateClusterId = Number(point.clusterId);
+        }
+        if (!point.sourceLabel && point.sourceType !== 'noise') {
+          const clusterLabel = Number.isFinite(Number(point.selectedAggregateClusterId ?? point.clusterId))
+            ? Number(point.selectedAggregateClusterId ?? point.clusterId)
+            : null;
+          point.sourceLabel = clusterLabel != null ? `Cluster ${clusterLabel}` : 'Cluster aggregato';
+        }
+      }
+      return point;
+    }
+
+    function getRunMapFeatureSourceId(feature = null) {
+      if (!feature?.layer?.id) return null;
+      const layerId = String(feature.layer.id);
+      const clusterEntry = Object.values(state.runMapClusterLayers).find(entry => Array.isArray(entry?.layerIds) && entry.layerIds.includes(layerId));
+      if (clusterEntry?.sourceId) return clusterEntry.sourceId;
+      const noiseEntry = state.runMapNoiseLayer;
+      if (noiseEntry && Array.isArray(noiseEntry.layerIds) && noiseEntry.layerIds.includes(layerId)) {
+        return noiseEntry.sourceId || null;
+      }
+      return null;
+    }
+
+    function getRunMapFeaturePointCount(feature = null) {
+      const raw = feature?.properties?.point_count;
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? numeric : 0;
+    }
+
+    function getRunMapAggregatePointsForFeature(feature = null) {
+      const sourceId = getRunMapFeatureSourceId(feature);
+      const clusterId = feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
+      const pointCount = getRunMapFeaturePointCount(feature);
+      if (!sourceId || !Number.isFinite(Number(clusterId)) || pointCount <= 0) {
+        return [];
+      }
+
+      const clusterKey = String(Number(clusterId));
+      if (sourceId === 'noise-source') {
+        const noisePoints = Array.isArray(state.runMapNoisePayload?.Punti) ? state.runMapNoisePayload.Punti : [];
+        return noisePoints.map((point, index) => ({
+          properties: {
+            ...point,
+            sourceType: 'noise',
+            sourceLabel: 'Punti fuori cluster',
+            selectedFromAggregate: true,
+            selectedAggregateCount: pointCount > 0 ? pointCount : noisePoints.length,
+            selectedAggregateClusterId: Number(clusterId),
+            selectedAggregateIndex: index
+          }
+        }));
+      }
+
+      const cluster = state.runMapClusterPayloads[clusterKey];
+      const clusterPoints = Array.isArray(cluster?.Punti) ? cluster.Punti : [];
+      if (!clusterPoints.length) return [];
+
+      return clusterPoints.map((point, index) => ({
+        properties: {
+          ...point,
+          clusterId: Number(clusterId),
+          sourceType: 'cluster',
+          sourceLabel: `Cluster ${clusterKey}`,
+          selectedFromAggregate: true,
+          selectedAggregateCount: pointCount > 0 ? pointCount : clusterPoints.length,
+          selectedAggregateClusterId: Number(clusterId),
+          selectedAggregateIndex: index
+        }
+      }));
+    }
+
+    function resolveClusterLeavesForFeature(feature = null) {
+      const sourceId = getRunMapFeatureSourceId(feature);
+      const pointCount = getRunMapFeaturePointCount(feature);
+      const clusterId = feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
+      const aggregatePoints = getRunMapAggregatePointsForFeature(feature);
+      if (Array.isArray(aggregatePoints) && aggregatePoints.length > 0) {
+        return Promise.resolve(aggregatePoints);
+      }
+      if (!sourceId || !Number.isFinite(Number(clusterId)) || pointCount <= 0) {
+        return Promise.resolve([feature].filter(Boolean));
+      }
+
+      const source = state.runMap?.getSource(sourceId);
+      if (!source || typeof source.getClusterLeaves !== 'function') {
+        return Promise.resolve([feature].filter(Boolean));
+      }
+
+      return new Promise(resolve => {
+        let settled = false;
+        const finish = value => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          resolve(value);
+        };
+        const fallbackSelection = [feature].filter(Boolean);
+        const timeoutId = window.setTimeout(() => finish(fallbackSelection), 1000);
+
+        try {
+          source.getClusterLeaves(Number(clusterId), Math.max(1, pointCount), 0, (error, leaves = []) => {
+            if (error || !Array.isArray(leaves) || !leaves.length) {
+              finish(fallbackSelection);
+              return;
+            }
+            const normalizedLeaves = leaves
+              .filter(leaf => leaf?.properties && typeof leaf.properties === 'object')
+              .map((leaf, index) => ({
+                ...leaf,
+                properties: {
+                  ...leaf.properties,
+                  selectedFromAggregate: true,
+                  selectedAggregateCount: pointCount,
+                  selectedAggregateClusterId: Number(clusterId),
+                  selectedAggregateIndex: index
+                }
+              }));
+            if (!normalizedLeaves.length) {
+              finish(fallbackSelection);
+              return;
+            }
+            finish(normalizedLeaves);
+          });
+        } catch (error) {
+          finish(fallbackSelection);
+        }
+      });
+    }
+
+    async function selectRunMapPointFromFeature(feature = null) {
+      const selectionToken = ++state.runMapSelectionToken;
+      if (!feature) {
+        if (selectionToken !== state.runMapSelectionToken) return;
+        return;
+      }
+      const resolvedFeatures = await resolveClusterLeavesForFeature(feature);
+      if (selectionToken !== state.runMapSelectionToken) return;
+      const context = {
+        sourceId: getRunMapFeatureSourceId(feature),
+        pointCount: getRunMapFeaturePointCount(feature),
+        clusterId: feature?.properties?.cluster_id ?? feature?.properties?.clusterId
+      };
+      const selectedPoints = Array.isArray(resolvedFeatures)
+        ? resolvedFeatures.map(resolvedFeature => extractRunMapPointSelection(resolvedFeature, context))
+        : [];
+      if (!selectedPoints.length) return;
+      if (selectedPoints.length > 1) {
+        addRunMapSelectedPoints(selectedPoints);
+        return;
+      }
+      toggleRunMapSelectedPoint(selectedPoints[0]);
+    }
+
+    function isRunMapDirectPointFeature(feature = null) {
+      const layerId = String(feature?.layer?.id || '');
+      return layerId.includes('-points-') || layerId === 'noise-points';
+    }
+
+    function pickRunMapSelectionFeature(features = []) {
+      if (!Array.isArray(features) || !features.length) return null;
+      return features.find(feature => isRunMapDirectPointFeature(feature)) || features[0] || null;
     }
 
     function getRunNoiseUrl(runId) {
@@ -2140,7 +2790,11 @@
       const clusterLayerId = 'noise-clusters';
       const countLayerId = 'noise-cluster-count';
       const pointLayerId = 'noise-points';
-      const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : []);
+      const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : [], point => ({
+        ...point,
+        sourceType: 'noise',
+        sourceLabel: 'Punti fuori cluster'
+      }));
 
       if (state.runMap.getSource(sourceId)) {
         state.runMap.getSource(sourceId).setData(data);
@@ -2437,6 +3091,7 @@
         return;
       }
 
+      pruneRunMapSelectedPoints(point => String(point.sourceType || '') === 'cluster');
       activeClusterIds.forEach(clusterId => removeClusterLayers(clusterId));
       state.runMapEnabledClusterIds = {};
       syncRunMapListSelection();
@@ -2463,6 +3118,7 @@
 
       if (!enabled) {
         state.runMapNoiseEnabled = false;
+        pruneRunMapSelectedPoints(point => String(point.sourceType || '') === 'noise');
         clearRunMapNoiseLayer();
         updateRunMapEmptyState();
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi`, '');
@@ -2539,6 +3195,7 @@
       state.runMapEnabledClusterIds = {};
       state.runMapNoiseEnabled = false;
       state.runMapNoisePayload = null;
+      clearRunMapSelectedPoints();
       clearRunMapNoiseLayer();
       clearRunMapLayers();
       hideClusterPieTooltip();
@@ -2588,6 +3245,7 @@
 
       if (!files.length) {
         updateRunMapStatus('Nessun cluster disponibile per questo run', '');
+        clearRunMapSelectedPoints();
         syncRunMapNoiseSelection(noiseCount);
         els.runMapClusters.innerHTML = '<div class="cluster-list-empty">Questo run non ha file cluster da mostrare sulla mappa.</div>';
         syncRunMapBulkToggle();
@@ -2600,9 +3258,6 @@
           <div class="cluster-item-top">
             <div class="cluster-item-lead">
               ${buildClusterInfractionPieMarkup(file.infractionCounts || file.IdTipoInfrazioneCounts || {})}
-              <label class="cluster-toggle">
-                <input type="checkbox" data-cluster-id="${escapeHtml(file.clusterId)}" aria-label="Mostra sulla mappa">
-              </label>
               <div class="cluster-item-header">
                 <div class="cluster-item-title-row">
                   <div class="cluster-item-title" style="color:${escapeHtml(getClusterColor(file.clusterId))};">Cluster ${escapeHtml(file.clusterId)}</div>
@@ -2613,6 +3268,10 @@
             </div>
             <div class="cluster-item-actions">
               <a class="btn ghost cluster-json-link" href="${escapeHtml(buildPoiClusterUrl(run.id, file.clusterId) + '?raw=1')}" target="_blank" rel="noopener noreferrer">JSON</a>
+              <label class="cluster-toggle" aria-label="Mostra sulla mappa">
+                <input type="checkbox" class="switch-input" data-cluster-id="${escapeHtml(file.clusterId)}" aria-label="Mostra sulla mappa">
+                <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              </label>
             </div>
           </div>
         </div>
@@ -2651,40 +3310,43 @@
 
       return `
         <article class="run-log-item" data-run-id="${escapeHtml(run.id)}">
-          <button
-            class="box-head interactive run-log-head"
-            type="button"
-            data-run-toggle="${escapeHtml(run.id)}"
-            aria-expanded="${collapsed ? 'false' : 'true'}"
-          >
-            <div class="box-head-main">
-              <div class="run-log-title-row">
-                <h3 class="box-head-title">${escapeHtml(run.setName || 'Set senza nome')}</h3>
-                <span class="run-log-pill run-log-title-badge">${escapeHtml(clusterCount)} cluster creati</span>
+          <div class="run-log-head-row">
+            <button
+              class="box-head interactive run-log-head"
+              type="button"
+              data-run-toggle="${escapeHtml(run.id)}"
+              aria-expanded="${collapsed ? 'false' : 'true'}"
+            >
+              <div class="box-head-main">
+                <div class="run-log-title-row">
+                  <h3 class="box-head-title">${escapeHtml(run.setName || 'Set senza nome')}</h3>
+                  <span class="run-log-pill run-log-title-badge">${escapeHtml(clusterCount)} cluster creati</span>
+                </div>
+                <div class="run-log-filter-badges">
+                  ${renderRunFilterBadges(filters)}
+                </div>
               </div>
-              <div class="run-log-filter-badges">
-                ${renderRunFilterBadges(filters)}
+              <div class="run-log-right">
+                <div class="run-log-date-duration">
+                  <span>${escapeHtml(executionDate || 'Data n/d')}</span>
+                  <span class="run-log-separator">·</span>
+                  <span>${escapeHtml(timingLabel || 'Tempo n/d')}</span>
+                </div>
+                <span class="tag ${escapeHtml(statusClass)} run-log-status">${escapeHtml(status.label)}</span>
+                <span class="collapse-indicator" aria-hidden="true">▾</span>
               </div>
+            </button>
+            <div class="run-log-actions">
+              <button class="btn primary run-log-map-btn" type="button" data-run-map="${escapeHtml(run.id)}">Mappa</button>
+              <button class="btn danger run-log-delete-btn" type="button" data-run-delete="${escapeHtml(run.id)}">Elimina log</button>
             </div>
-            <div class="run-log-right">
-              <div class="run-log-date-duration">
-                <span>${escapeHtml(executionDate || 'Data n/d')}</span>
-                <span class="run-log-separator">·</span>
-                <span>${escapeHtml(timingLabel || 'Tempo n/d')}</span>
-              </div>
-              <span class="tag ${escapeHtml(statusClass)} run-log-status">${escapeHtml(status.label)}</span>
-              <span class="collapse-indicator" aria-hidden="true">▾</span>
-            </div>
-          </button>
+          </div>
           <div class="run-log-body" ${collapsed ? 'hidden' : ''}>
             <div class="result-grid">
               <div class="result-metric"><div class="label">Punti letti</div><div class="value">${escapeHtml(summary.sourcePointCount ?? 0)}</div></div>
               <div class="result-metric"><div class="label">Cluster</div><div class="value">${escapeHtml(summary.clusterCount ?? 0)}</div></div>
               <div class="result-metric"><div class="label">Punti clusterizzati</div><div class="value">${escapeHtml(summary.clusteredPointCount ?? 0)}</div></div>
               <div class="result-metric"><div class="label">Rumore</div><div class="value">${escapeHtml(summary.noisePointCount ?? 0)}</div></div>
-              <div class="result-metric result-action">
-                <button class="btn primary" type="button" data-run-map="${escapeHtml(run.id)}">Mappa</button>
-              </div>
             </div>
             <div class="file-list">
               ${Array.isArray(run.artifacts?.files) && run.artifacts.files.length
@@ -2696,9 +3358,6 @@
                     </div>
                   `).join('')
                 : '<div class="file-item">Nessun file cluster generato</div>'}
-            </div>
-            <div class="run-log-footer">
-              <button class="btn danger" type="button" data-run-delete="${escapeHtml(run.id)}">Elimina log</button>
             </div>
           </div>
         </article>
@@ -2726,6 +3385,33 @@
           rehydrateVisibleClusters();
           rehydrateVisibleNoise();
         });
+        state.runMap.on('click', event => {
+          if (!state.runMap) return;
+          const layerIds = getRunMapSelectableLayerIds();
+          if (!layerIds.length) {
+            return;
+          }
+          const features = state.runMap.queryRenderedFeatures(event.point, { layers: layerIds });
+          const pickedFeature = pickRunMapSelectionFeature(features);
+          if (!pickedFeature) {
+            return;
+          }
+          void selectRunMapPointFromFeature(pickedFeature);
+        });
+        state.runMap.on('mousemove', event => {
+          if (!state.runMap) return;
+          const layerIds = getRunMapSelectableLayerIds();
+          if (!layerIds.length) {
+            state.runMap.getCanvas().style.cursor = '';
+            return;
+          }
+          const features = state.runMap.queryRenderedFeatures(event.point, { layers: layerIds });
+          state.runMap.getCanvas().style.cursor = Array.isArray(features) && features.length ? 'pointer' : '';
+        });
+        state.runMap.on('mouseout', () => {
+          if (!state.runMap) return;
+          state.runMap.getCanvas().style.cursor = '';
+        });
       }
       requestAnimationFrame(() => {
         if (state.runMap) state.runMap.resize();
@@ -2740,6 +3426,7 @@
 
       if (!enabled) {
         state.runMapEnabledClusterIds[clusterKey] = false;
+        pruneRunMapSelectedPoints(point => String(point.sourceType || '') === 'cluster' && String(point.selectedAggregateClusterId ?? point.clusterId ?? '') === clusterKey);
         removeClusterLayers(clusterKey);
         updateRunMapEmptyState();
         const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
@@ -3345,6 +4032,19 @@
     if (els.noisePointsToggle) {
       els.noisePointsToggle.addEventListener('change', event => {
         void toggleNoisePointsOnMap(event.target.checked);
+      });
+    }
+    if (els.runMapPointDetail) {
+      els.runMapPointDetail.addEventListener('click', event => {
+        const clearButton = event.target.closest('[data-run-map-clear-selection]');
+        const removeButton = event.target.closest('[data-run-map-point-remove]');
+        if (clearButton) {
+          clearRunMapSelectedPoints();
+          return;
+        }
+        if (removeButton) {
+          pruneRunMapSelectedPoints(point => getRunMapPointSelectionKey(point) === removeButton.dataset.runMapPointRemove);
+        }
       });
     }
     document.addEventListener('pointerdown', event => {
