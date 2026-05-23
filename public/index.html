@@ -1630,6 +1630,7 @@
 
     const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
     const MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.mapLayerGroups.v1';
+    const ACTIVE_PAGE_STORAGE_KEY = 'poistudio.activePageId.v1';
 
     const MAP_LAYER_GROUPS = [
       {
@@ -1766,10 +1767,31 @@
       }
     }
 
+    function loadPersistedActivePageId() {
+      const fallbackPageId = 'config-page';
+      try {
+        if (typeof localStorage === 'undefined') return fallbackPageId;
+        const raw = localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY);
+        const allowedPages = new Set(['config-page', 'prep-page', 'execution-page', 'map-page']);
+        return allowedPages.has(raw) ? raw : fallbackPageId;
+      } catch {
+        return fallbackPageId;
+      }
+    }
+
     function persistMapVisibleLayerGroups() {
       try {
         if (typeof localStorage === 'undefined') return;
         localStorage.setItem(MAP_LAYER_SETTINGS_STORAGE_KEY, JSON.stringify(state.runMapVisibleLayerGroups));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
+    function persistActivePageId(pageId) {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, pageId);
       } catch {
         /* localStorage may be unavailable or full */
       }
@@ -1789,7 +1811,6 @@
       runStatePollInFlight: false,
       runStopInFlight: false,
       resultsCollapsed: true,
-      activePageId: 'config-page',
       runMap: null,
       runMapRunId: null,
       runMapClusterFiles: [],
@@ -1804,7 +1825,8 @@
       clusterPieTooltip: null,
       clusterPieTooltipTarget: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
-      runMapClusterBounds: {}
+      runMapClusterBounds: {},
+      activePageId: loadPersistedActivePageId()
   };
 
     const els = {
@@ -2340,10 +2362,38 @@
       syncMapLayerGroupMenu();
     }
 
+    function getRunMapAggregatePointId(point = {}) {
+      return String(point.Id ?? point.IdDataentry ?? point.IdOcr ?? '');
+    }
+
+    function getRunMapAggregatePointRef(sourceType = 'cluster', clusterId = '', point = {}) {
+      const pointId = getRunMapAggregatePointId(point);
+      const lat = Number.isFinite(Number(point.Latitudine)) ? Number(point.Latitudine) : '';
+      const lon = Number.isFinite(Number(point.Longitudine)) ? Number(point.Longitudine) : '';
+      return [
+        String(sourceType || ''),
+        String(clusterId ?? ''),
+        pointId,
+        String(lat),
+        String(lon)
+      ].join(':');
+    }
+
+    function splitRunMapAggregateText(value = '') {
+      return String(value || '')
+        .split('|')
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
     function buildClusterGeoJson(cluster) {
       return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], point => ({
         ...point,
-        clusterId: cluster.ClusterId,
+        aggregateClusterId: cluster.ClusterId,
+        aggregatePointId: getRunMapAggregatePointId(point),
+        aggregatePointRef: getRunMapAggregatePointRef('cluster', cluster.ClusterId, point),
+        aggregatePointIdsText: `${getRunMapAggregatePointId(point)}|`,
+        aggregatePointRefsText: `${getRunMapAggregatePointRef('cluster', cluster.ClusterId, point)}|`,
         sourceType: 'cluster',
         sourceLabel: `Cluster ${cluster.ClusterId}`
       }));
@@ -2403,13 +2453,16 @@
 
     function getRunMapPointSelectionLabel(point = {}) {
       if (String(point.sourceType || '') === 'noise') return 'Punti fuori cluster';
-      if (point.clusterId != null) return `Cluster ${point.clusterId}`;
+      if (point.selectedFromAggregate && Number.isFinite(Number(point.selectedAggregateClusterId ?? point.aggregateClusterId ?? point.clusterId))) {
+        return `Cluster ${Number(point.selectedAggregateClusterId ?? point.aggregateClusterId ?? point.clusterId)}`;
+      }
       return 'Punto selezionato';
     }
 
     function getRunMapPointSelectionKey(point = {}) {
       return [
         String(point.sourceType || ''),
+        String(point.aggregatePointRef || ''),
         String(point.selectedAggregateClusterId ?? point.clusterId ?? ''),
         String(point.selectedAggregateIndex ?? ''),
         String(point.Id ?? ''),
@@ -2451,12 +2504,16 @@
         if (point.IdTipoInfrazione != null) {
           badges.push(`<span class="map-point-detail-chip">${escapeHtml(`${point.IdTipoInfrazione} · ${getInfractionLabel(point.IdTipoInfrazione)}`)}</span>`);
         }
+        if (point.aggregatePointRef) {
+          badges.push(`<span class="map-point-detail-chip">Ref ${escapeHtml(point.aggregatePointRef)}</span>`);
+        }
         if (pointIdText !== '') {
           badges.push(`<span class="map-point-detail-chip">Id ${escapeHtml(pointIdText)}</span>`);
         }
 
         const fields = [
           ['Id', formatRunMapPointValue(point.Id)],
+          ['Id rappresentato', formatRunMapPointValue(point.aggregatePointId)],
           ['IdDataentry', formatRunMapPointValue(point.IdDataentry)],
           ['IdOcr', formatRunMapPointValue(point.IdOcr)],
           ['Città', formatRunMapPointValue(point.Citta)],
@@ -2573,11 +2630,8 @@
       Object.entries(properties).forEach(([key, value]) => {
         point[key] = value;
       });
-      if (point.clusterId != null) {
-        point.clusterId = Number(point.clusterId);
-      }
-      if (point.clusterId == null && Number.isFinite(Number(aggregateClusterId))) {
-        point.clusterId = Number(aggregateClusterId);
+      if (point.aggregateClusterId != null) {
+        point.aggregateClusterId = Number(point.aggregateClusterId);
       }
       if (point.Id != null) point.Id = Number(point.Id);
       if (point.IdDataentry != null) point.IdDataentry = Number(point.IdDataentry);
@@ -2598,8 +2652,8 @@
           : pointCount;
         if (Number.isFinite(Number(aggregateClusterId))) {
           point.selectedAggregateClusterId = Number(aggregateClusterId);
-        } else if (point.clusterId != null && point.selectedAggregateClusterId == null) {
-          point.selectedAggregateClusterId = Number(point.clusterId);
+        } else if (point.aggregateClusterId != null && point.selectedAggregateClusterId == null) {
+          point.selectedAggregateClusterId = Number(point.aggregateClusterId);
         }
         if (!point.sourceLabel && point.sourceType !== 'noise') {
           const clusterLabel = Number.isFinite(Number(point.selectedAggregateClusterId ?? point.clusterId))
@@ -2623,6 +2677,13 @@
       return null;
     }
 
+    function getRunMapFeatureClusterId(feature = null) {
+      if (!feature?.layer?.id) return null;
+      const layerId = String(feature.layer.id);
+      const clusterEntry = Object.entries(state.runMapClusterLayers).find(([, entry]) => Array.isArray(entry?.layerIds) && entry.layerIds.includes(layerId));
+      return clusterEntry ? clusterEntry[0] : null;
+    }
+
     function getRunMapFeaturePointCount(feature = null) {
       const raw = feature?.properties?.point_count;
       const numeric = Number(raw);
@@ -2631,61 +2692,56 @@
 
     function getRunMapAggregatePointsForFeature(feature = null) {
       const sourceId = getRunMapFeatureSourceId(feature);
-      const clusterId = feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
+      const clusterId = getRunMapFeatureClusterId(feature) ?? feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
       const pointCount = getRunMapFeaturePointCount(feature);
       if (!sourceId || !Number.isFinite(Number(clusterId)) || pointCount <= 0) {
         return [];
       }
 
+      const idsText = feature?.properties?.aggregatePointIdsText || '';
+      const refsText = feature?.properties?.aggregatePointRefsText || '';
+      const ids = splitRunMapAggregateText(idsText).slice(0, pointCount);
+      const refs = splitRunMapAggregateText(refsText).slice(0, pointCount);
       const clusterKey = String(Number(clusterId));
-      if (sourceId === 'noise-source') {
-        const noisePoints = Array.isArray(state.runMapNoisePayload?.Punti) ? state.runMapNoisePayload.Punti : [];
-        return noisePoints.map((point, index) => ({
-          properties: {
-            ...point,
-            sourceType: 'noise',
-            sourceLabel: 'Punti fuori cluster',
-            selectedFromAggregate: true,
-            selectedAggregateCount: pointCount > 0 ? pointCount : noisePoints.length,
-            selectedAggregateClusterId: Number(clusterId),
-            selectedAggregateIndex: index
-          }
-        }));
-      }
-
-      const cluster = state.runMapClusterPayloads[clusterKey];
-      const clusterPoints = Array.isArray(cluster?.Punti) ? cluster.Punti : [];
-      if (!clusterPoints.length) return [];
-
-      return clusterPoints.map((point, index) => ({
-        properties: {
-          ...point,
-          clusterId: Number(clusterId),
-          sourceType: 'cluster',
-          sourceLabel: `Cluster ${clusterKey}`,
-          selectedFromAggregate: true,
-          selectedAggregateCount: pointCount > 0 ? pointCount : clusterPoints.length,
-          selectedAggregateClusterId: Number(clusterId),
-          selectedAggregateIndex: index
+      const sourceType = sourceId === 'noise-source' ? 'noise' : 'cluster';
+      const sourcePoints = sourceType === 'noise'
+        ? (Array.isArray(state.runMapNoisePayload?.Punti) ? state.runMapNoisePayload.Punti : [])
+        : (Array.isArray(state.runMapClusterPayloads[clusterKey]?.Punti) ? state.runMapClusterPayloads[clusterKey].Punti : []);
+      if (ids.length > 0 && sourcePoints.length > 0) {
+        const lookupById = new Map(sourcePoints.map(point => [getRunMapAggregatePointId(point), point]));
+        const resolvedById = ids.map(id => lookupById.get(String(id))).filter(Boolean);
+        if (resolvedById.length > 0) {
+          return resolvedById.map((point, index) => ({
+            properties: {
+              ...point,
+              selectedFromAggregate: true,
+              selectedAggregateCount: pointCount,
+              selectedAggregateClusterId: Number(clusterId),
+              selectedAggregateIndex: index
+            }
+          }));
         }
-      }));
-    }
-
-    function resolveClusterLeavesForFeature(feature = null) {
-      const sourceId = getRunMapFeatureSourceId(feature);
-      const pointCount = getRunMapFeaturePointCount(feature);
-      const clusterId = feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
-      const aggregatePoints = getRunMapAggregatePointsForFeature(feature);
-      if (Array.isArray(aggregatePoints) && aggregatePoints.length > 0) {
-        return Promise.resolve(aggregatePoints);
       }
-      if (!sourceId || !Number.isFinite(Number(clusterId)) || pointCount <= 0) {
-        return Promise.resolve([feature].filter(Boolean));
+
+      if (refs.length > 0 && sourcePoints.length > 0) {
+        const lookup = new Map(sourcePoints.map(point => [getRunMapAggregatePointRef(sourceType, sourceType === 'noise' ? 'noise' : clusterKey, point), point]));
+        const resolvedByRef = refs.map(ref => lookup.get(ref)).filter(Boolean);
+        if (resolvedByRef.length > 0) {
+          return resolvedByRef.map((point, index) => ({
+            properties: {
+              ...point,
+              selectedFromAggregate: true,
+              selectedAggregateCount: pointCount,
+              selectedAggregateClusterId: Number(clusterId),
+              selectedAggregateIndex: index
+            }
+          }));
+        }
       }
 
       const source = state.runMap?.getSource(sourceId);
       if (!source || typeof source.getClusterLeaves !== 'function') {
-        return Promise.resolve([feature].filter(Boolean));
+        return [];
       }
 
       return new Promise(resolve => {
@@ -2696,19 +2752,18 @@
           clearTimeout(timeoutId);
           resolve(value);
         };
-        const fallbackSelection = [feature].filter(Boolean);
-        const timeoutId = window.setTimeout(() => finish(fallbackSelection), 1000);
+        const timeoutId = window.setTimeout(() => finish([]), 1000);
 
         try {
           source.getClusterLeaves(Number(clusterId), Math.max(1, pointCount), 0, (error, leaves = []) => {
             if (error || !Array.isArray(leaves) || !leaves.length) {
-              finish(fallbackSelection);
+              finish([]);
               return;
             }
             const normalizedLeaves = leaves
               .filter(leaf => leaf?.properties && typeof leaf.properties === 'object')
+              .slice(0, Math.max(1, pointCount))
               .map((leaf, index) => ({
-                ...leaf,
                 properties: {
                   ...leaf.properties,
                   selectedFromAggregate: true,
@@ -2717,16 +2772,30 @@
                   selectedAggregateIndex: index
                 }
               }));
-            if (!normalizedLeaves.length) {
-              finish(fallbackSelection);
-              return;
-            }
             finish(normalizedLeaves);
           });
         } catch (error) {
-          finish(fallbackSelection);
+          finish([]);
         }
       });
+    }
+
+    function resolveClusterLeavesForFeature(feature = null) {
+      const sourceId = getRunMapFeatureSourceId(feature);
+      const pointCount = getRunMapFeaturePointCount(feature);
+      const clusterId = getRunMapFeatureClusterId(feature) ?? feature?.properties?.cluster_id ?? feature?.properties?.clusterId;
+      if (!sourceId || !Number.isFinite(Number(clusterId)) || pointCount <= 0) {
+        return Promise.resolve([feature].filter(Boolean));
+      }
+
+      return Promise.resolve(getRunMapAggregatePointsForFeature(feature))
+        .then(aggregatePoints => {
+          if (Array.isArray(aggregatePoints) && aggregatePoints.length > 0) {
+            return aggregatePoints;
+          }
+          return [feature].filter(Boolean);
+        })
+        .catch(() => [feature].filter(Boolean));
     }
 
     async function selectRunMapPointFromFeature(feature = null) {
@@ -2740,7 +2809,7 @@
       const context = {
         sourceId: getRunMapFeatureSourceId(feature),
         pointCount: getRunMapFeaturePointCount(feature),
-        clusterId: feature?.properties?.cluster_id ?? feature?.properties?.clusterId
+        clusterId: getRunMapFeatureClusterId(feature) ?? feature?.properties?.cluster_id ?? feature?.properties?.clusterId
       };
       const selectedPoints = Array.isArray(resolvedFeatures)
         ? resolvedFeatures.map(resolvedFeature => extractRunMapPointSelection(resolvedFeature, context))
@@ -2793,7 +2862,11 @@
       const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : [], point => ({
         ...point,
         sourceType: 'noise',
-        sourceLabel: 'Punti fuori cluster'
+        sourceLabel: 'Punti fuori cluster',
+        aggregatePointId: getRunMapAggregatePointId(point),
+        aggregatePointRef: getRunMapAggregatePointRef('noise', 'noise', point),
+        aggregatePointIdsText: `${getRunMapAggregatePointId(point)}|`,
+        aggregatePointRefsText: `${getRunMapAggregatePointRef('noise', 'noise', point)}|`
       }));
 
       if (state.runMap.getSource(sourceId)) {
@@ -2804,6 +2877,10 @@
           cluster: true,
           clusterRadius: 18,
           clusterMaxZoom: 24,
+          clusterProperties: {
+            aggregatePointIdsText: ['concat', ['get', 'aggregatePointIdsText']],
+            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']]
+          },
           data
         });
       }
@@ -2942,6 +3019,10 @@
           cluster: true,
           clusterRadius: 18,
           clusterMaxZoom: 24,
+          clusterProperties: {
+            aggregatePointIdsText: ['concat', ['get', 'aggregatePointIdsText']],
+            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']]
+          },
           data
         });
       }
@@ -3915,6 +3996,7 @@
 
     function switchPage(pageId) {
       state.activePageId = pageId;
+      persistActivePageId(pageId);
       document.querySelectorAll('.nav button').forEach(button => {
         button.classList.toggle('active', button.dataset.page === pageId);
       });
@@ -4080,6 +4162,7 @@
     resetExecutionSetForm();
     syncMapSettingsMenu();
     setMapSettingsMenuOpen(false);
+    switchPage(state.activePageId);
     renderRunState();
     renderRunResults();
     setRunResultsTab('detail');
