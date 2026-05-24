@@ -874,6 +874,15 @@
       width: 100%;
       height: 560px;
     }
+    .map-selection-box {
+      position: absolute;
+      z-index: 8;
+      border: 2px solid rgba(194, 65, 12, 0.95);
+      background: rgba(194, 65, 12, 0.14);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+      pointer-events: none;
+      border-radius: 6px;
+    }
     .map-empty {
       position: absolute;
       inset: auto;
@@ -1090,9 +1099,21 @@
       display: grid;
       gap: 6px;
     }
+    .map-sidebar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
     .map-sidebar-title {
       font-size: 0.98rem;
       font-weight: 800;
+    }
+    .map-sidebar-note {
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--muted);
     }
     .cluster-list {
       display: grid;
@@ -1317,6 +1338,19 @@
     .noise-toggle .switch-input:checked + .switch-track .switch-thumb {
       transform: translateX(20px);
     }
+    .map-point-box-toggle {
+      gap: 10px;
+      justify-content: flex-end;
+      min-height: 32px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .map-point-box-toggle .switch-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
     .collapsible-content[hidden] {
       display: none !important;
     }
@@ -1490,7 +1524,7 @@
             <div class="box-head-hint" id="mapPageHint">Seleziona un log per caricare i cluster corrispondenti.</div>
           </div>
           <div class="box-head-actions">
-            <div class="inline-status box-status" id="mapPageStatus" aria-live="polite">Nessun run selezionato</div>
+            <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
             <div class="map-settings" id="mapSettings">
               <button class="btn ghost map-settings-btn" id="mapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="mapSettingsMenu">⚙</button>
               <div class="map-settings-menu" id="mapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
@@ -1553,21 +1587,20 @@
             <div class="map-stage">
               <div class="map-stage-main">
                 <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
+                <div class="map-selection-box" id="runMapSelectionBox" hidden aria-hidden="true"></div>
                 <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
               </div>
               <div class="map-point-detail" id="runMapPointDetail" aria-live="polite">
-                <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.</div>
+                <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>
               </div>
             </div>
           </div>
           <div class="map-sidebar">
-            <div class="map-sidebar-head">
-              <div class="map-sidebar-title">Cluster disponibili</div>
-              <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
-              <div class="map-sidebar-actions">
-                <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
+              <div class="map-sidebar-head">
+                <div class="map-sidebar-actions">
+                  <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
+                </div>
               </div>
-            </div>
             <div class="cluster-item cluster-noise" id="noisePointsBox">
               <div class="cluster-item-top">
                 <div class="cluster-item-lead">
@@ -1772,8 +1805,9 @@
       try {
         if (typeof localStorage === 'undefined') return fallbackPageId;
         const raw = localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY);
-        const allowedPages = new Set(['config-page', 'prep-page', 'execution-page', 'map-page']);
-        return allowedPages.has(raw) ? raw : fallbackPageId;
+        const normalized = raw === 'execution-page' ? 'run-page' : raw;
+        const allowedPages = new Set(['config-page', 'prep-page', 'run-page', 'map-page']);
+        return allowedPages.has(normalized) ? normalized : fallbackPageId;
       } catch {
         return fallbackPageId;
       }
@@ -1821,7 +1855,11 @@
       runMapNoisePayload: null,
       runMapNoiseLayer: null,
       runMapSelectedPoints: [],
+      runMapSelectionOverlayPending: false,
       runMapSelectionToken: 0,
+      runMapBoxSelectEnabled: false,
+      runMapBoxSelection: null,
+      runMapBoxSelectionSuppressClick: false,
       clusterPieTooltip: null,
       clusterPieTooltipTarget: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
@@ -1865,6 +1903,7 @@
       noisePointsMeta: document.getElementById('noisePointsMeta'),
       runMapClusters: document.getElementById('runMapClusters'),
       resultsMap: document.getElementById('resultsMap'),
+      runMapSelectionBox: document.getElementById('runMapSelectionBox'),
       resultsMapEmpty: document.getElementById('resultsMapEmpty'),
       saveConfigBtn: document.getElementById('saveConfigBtn'),
       testSqlBtn: document.getElementById('testSqlBtn'),
@@ -2399,6 +2438,73 @@
       }));
     }
 
+    function buildRunMapSelectionGeoJson(points = []) {
+      const groupedPoints = new Map();
+      (Array.isArray(points) ? points : []).forEach(point => {
+        if (!point) return;
+        const groupKey = String(point.selectionFeatureKey || getRunMapPointSelectionKey(point));
+        const anchorLat = Number.isFinite(Number(point.selectionAnchorLat)) ? Number(point.selectionAnchorLat) : Number(point.Latitudine);
+        const anchorLon = Number.isFinite(Number(point.selectionAnchorLon)) ? Number(point.selectionAnchorLon) : Number(point.Longitudine);
+        const radius = Number.isFinite(Number(point.selectionRadius)) ? Number(point.selectionRadius) : 7.5;
+        const displayRadius = Number.isFinite(Number(point.selectionDisplayRadius)) ? Number(point.selectionDisplayRadius) : radius;
+        const existing = groupedPoints.get(groupKey);
+        const basePoint = existing || {
+          ...point,
+          Latitudine: anchorLat,
+          Longitudine: anchorLon,
+          selectionRadius: radius,
+          selectionDisplayRadius: displayRadius
+        };
+
+        if (!existing) {
+          groupedPoints.set(groupKey, basePoint);
+          return;
+        }
+
+        if (Number.isFinite(radius)) {
+          basePoint.selectionRadius = Math.max(Number(basePoint.selectionRadius) || 0, radius);
+        }
+        if (Number.isFinite(displayRadius)) {
+          basePoint.selectionDisplayRadius = Math.max(Number(basePoint.selectionDisplayRadius) || 0, displayRadius);
+        }
+      });
+
+      return buildPointsGeoJson(Array.from(groupedPoints.values()), point => ({
+        ...point,
+        sourceType: String(point.sourceType || 'selection'),
+        sourceLabel: String(point.sourceLabel || getRunMapPointSelectionLabel(point) || 'Selezione')
+      }));
+    }
+
+    function getRunMapClusterMarkerRadius(pointCount = 0, sourceType = 'cluster') {
+      const numericPointCount = Math.max(0, Number(pointCount) || 0);
+      const isNoise = String(sourceType || '') === 'noise';
+      if (isNoise) {
+        if (numericPointCount >= 50) return 17;
+        if (numericPointCount >= 25) return 14;
+        if (numericPointCount >= 10) return 11;
+        return 9;
+      }
+      if (numericPointCount >= 50) return 18;
+      if (numericPointCount >= 25) return 15;
+      if (numericPointCount >= 10) return 12;
+      return 10;
+    }
+
+    function getRunMapSelectionMarkerRadius(feature = null) {
+      const layerId = String(feature?.layer?.id || '');
+      const pointCount = getRunMapFeaturePointCount(feature);
+      if (layerId === 'noise-points') return 6;
+      if (layerId.includes('-points-')) return 7.5;
+      if (layerId === 'noise-clusters' || layerId === 'noise-cluster-count') {
+        return getRunMapClusterMarkerRadius(pointCount, 'noise');
+      }
+      if (layerId.includes('-clusters-') || layerId.includes('-count-')) {
+        return getRunMapClusterMarkerRadius(pointCount, 'cluster');
+      }
+      return 7.5;
+    }
+
     function buildPointsGeoJson(points, getProperties = () => ({})) {
       const features = Array.isArray(points)
         ? points
@@ -2451,12 +2557,165 @@
       return layerIds;
     }
 
+    function getRunMapSelectionHostRect() {
+      const host = els.resultsMap?.parentElement || els.resultsMap;
+      if (!host || typeof host.getBoundingClientRect !== 'function') return null;
+      return host.getBoundingClientRect();
+    }
+
+    function getRunMapBoxSelectButton() {
+      return document.getElementById('runMapBoxSelectToggle');
+    }
+
+    function getRunMapCanvasPointFromClient(clientX, clientY) {
+      const rect = getRunMapSelectionHostRect();
+      if (!rect) return null;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function updateRunMapBoxSelectButton() {
+      const button = getRunMapBoxSelectButton();
+      if (!button) return;
+      const enabled = Boolean(state.runMapBoxSelectEnabled);
+      button.checked = enabled;
+    }
+
+    function clearRunMapSelectionBox() {
+      state.runMapBoxSelection = null;
+      if (!els.runMapSelectionBox) return;
+      els.runMapSelectionBox.hidden = true;
+      els.runMapSelectionBox.style.left = '';
+      els.runMapSelectionBox.style.top = '';
+      els.runMapSelectionBox.style.width = '';
+      els.runMapSelectionBox.style.height = '';
+    }
+
+    function renderRunMapSelectionBox(startPoint, currentPoint) {
+      if (!els.runMapSelectionBox) return;
+      if (!getRunMapSelectionHostRect() || !startPoint || !currentPoint) {
+        clearRunMapSelectionBox();
+        return;
+      }
+      const left = Math.min(startPoint.x, currentPoint.x);
+      const top = Math.min(startPoint.y, currentPoint.y);
+      const width = Math.max(0, Math.abs(currentPoint.x - startPoint.x));
+      const height = Math.max(0, Math.abs(currentPoint.y - startPoint.y));
+      els.runMapSelectionBox.hidden = false;
+      els.runMapSelectionBox.style.left = `${left}px`;
+      els.runMapSelectionBox.style.top = `${top}px`;
+      els.runMapSelectionBox.style.width = `${width}px`;
+      els.runMapSelectionBox.style.height = `${height}px`;
+    }
+
+    function setRunMapBoxSelectEnabled(enabled) {
+      state.runMapBoxSelectEnabled = Boolean(enabled);
+      updateRunMapBoxSelectButton();
+      if (state.runMap && state.runMap.getCanvas) {
+        state.runMap.getCanvas().style.cursor = state.runMapBoxSelectEnabled ? 'crosshair' : '';
+      }
+      if (!state.runMapBoxSelectEnabled) {
+        clearRunMapSelectionBox();
+        state.runMapBoxSelectionSuppressClick = false;
+      }
+    }
+
+    function getRunMapSelectionFeatureKey(feature = null) {
+      const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+      return [
+        String(feature?.layer?.id || ''),
+        String(getRunMapFeatureSourceId(feature) || properties.sourceId || ''),
+        String(getRunMapFeatureClusterId(feature) ?? properties.cluster_id ?? properties.clusterId ?? ''),
+        String(feature?.id ?? ''),
+        String(properties.aggregatePointRef || ''),
+        String(properties.aggregatePointIdsText || ''),
+        String(properties.aggregatePointRefsText || ''),
+        String(properties.Id ?? properties.IdDataentry ?? properties.IdOcr ?? '')
+      ].join('|');
+    }
+
+    function getRunMapSelectableFeaturesInBounds(bounds = null) {
+      if (!state.runMap || !bounds) return [];
+      const layerIds = getRunMapSelectableLayerIds();
+      if (!layerIds.length) return [];
+      try {
+        return state.runMap.queryRenderedFeatures(bounds, { layers: layerIds });
+      } catch {
+        return [];
+      }
+    }
+
+    async function resolveRunMapSelectionPoints(features = []) {
+      const sourceFeatures = Array.isArray(features) ? features.filter(Boolean) : [];
+      if (!sourceFeatures.length) return [];
+
+      const uniqueFeatures = [];
+      const featureKeys = new Set();
+      sourceFeatures.forEach(feature => {
+        const key = getRunMapSelectionFeatureKey(feature);
+        if (featureKeys.has(key)) return;
+        featureKeys.add(key);
+        uniqueFeatures.push(feature);
+      });
+
+      const resolvedLists = await Promise.all(uniqueFeatures.map(feature => Promise.resolve(resolveClusterLeavesForFeature(feature))));
+      const selectedPoints = [];
+      const selectedKeys = new Set();
+
+      uniqueFeatures.forEach((feature, featureIndex) => {
+        const geometryCoordinates = Array.isArray(feature?.geometry?.coordinates) ? feature.geometry.coordinates : [];
+        const selectionAnchorLon = Number(geometryCoordinates[0]);
+        const selectionAnchorLat = Number(geometryCoordinates[1]);
+        const context = {
+          sourceId: getRunMapFeatureSourceId(feature),
+          pointCount: getRunMapFeaturePointCount(feature),
+          clusterId: getRunMapFeatureClusterId(feature) ?? feature?.properties?.cluster_id ?? feature?.properties?.clusterId,
+          selectionRadius: getRunMapSelectionMarkerRadius(feature),
+          selectionFeatureKey: getRunMapSelectionFeatureKey(feature),
+          selectionAnchorLat: Number.isFinite(selectionAnchorLat) ? selectionAnchorLat : null,
+          selectionAnchorLon: Number.isFinite(selectionAnchorLon) ? selectionAnchorLon : null,
+          selectionDisplayRadius: getRunMapSelectionMarkerRadius(feature)
+        };
+        const resolvedFeatures = Array.isArray(resolvedLists[featureIndex]) && resolvedLists[featureIndex].length
+          ? resolvedLists[featureIndex]
+          : [feature].filter(Boolean);
+        resolvedFeatures.forEach(resolvedFeature => {
+          const point = extractRunMapPointSelection(resolvedFeature, context);
+          point.selectionFeatureKey = context.selectionFeatureKey;
+          if (Number.isFinite(Number(context.selectionAnchorLat))) {
+            point.selectionAnchorLat = Number(context.selectionAnchorLat);
+          }
+          if (Number.isFinite(Number(context.selectionAnchorLon))) {
+            point.selectionAnchorLon = Number(context.selectionAnchorLon);
+          }
+          if (Number.isFinite(Number(context.selectionRadius))) {
+            point.selectionRadius = Number(context.selectionRadius);
+          }
+          if (Number.isFinite(Number(context.selectionDisplayRadius))) {
+            point.selectionDisplayRadius = Number(context.selectionDisplayRadius);
+          }
+          const key = getRunMapPointSelectionKey(point);
+          if (selectedKeys.has(key)) return;
+          selectedKeys.add(key);
+          selectedPoints.push(point);
+        });
+      });
+
+      return selectedPoints;
+    }
+
     function getRunMapPointSelectionLabel(point = {}) {
       if (String(point.sourceType || '') === 'noise') return 'Punti fuori cluster';
       if (point.selectedFromAggregate && Number.isFinite(Number(point.selectedAggregateClusterId ?? point.aggregateClusterId ?? point.clusterId))) {
         return `Cluster ${Number(point.selectedAggregateClusterId ?? point.aggregateClusterId ?? point.clusterId)}`;
       }
       return 'Punto selezionato';
+    }
+
+    function getRunMapPointSelectionKindLabel(point = {}) {
+      return point.selectedFromAggregate ? 'Punto multiplo' : 'Punto singolo';
     }
 
     function getRunMapPointSelectionKey(point = {}) {
@@ -2481,7 +2740,7 @@
       if (!els.runMapPointDetail) return;
       const selectedPoints = Array.isArray(points) ? points : [];
       if (!selectedPoints.length) {
-        els.runMapPointDetail.innerHTML = '<div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.</div>';
+        els.runMapPointDetail.innerHTML = '<div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>';
         return;
       }
 
@@ -2528,14 +2787,14 @@
 
         return `
           <article class="map-point-detail-card" data-run-map-point-key="${escapeHtml(getRunMapPointSelectionKey(point))}">
-            <div class="map-point-detail-card-head">
-              <div class="map-point-detail-card-copy">
-                <div class="map-point-detail-card-kicker">Punto ${escapeHtml(formatCount(index + 1))}</div>
-                <div class="map-point-detail-card-title">${escapeHtml(title)}</div>
-                ${subtitleParts.length ? `<div class="map-point-detail-card-subtitle">${escapeHtml(subtitleParts.join(' · '))}</div>` : ''}
-              </div>
+              <div class="map-point-detail-card-head">
+                <div class="map-point-detail-card-copy">
+                  <div class="map-point-detail-card-kicker">Punto ${escapeHtml(formatCount(index + 1))}</div>
+                  <div class="map-point-detail-card-title">${escapeHtml(title)}</div>
+                  ${subtitleParts.length ? `<div class="map-point-detail-card-subtitle">${escapeHtml(subtitleParts.join(' · '))}</div>` : ''}
+                </div>
               <div class="map-point-detail-card-actions">
-                <span class="map-point-detail-card-index">${escapeHtml(getRunMapPointSelectionLabel(point))}</span>
+                <span class="map-point-detail-card-index">${escapeHtml(getRunMapPointSelectionKindLabel(point))}</span>
                 <button class="btn ghost map-point-detail-card-remove" type="button" data-run-map-point-remove="${escapeHtml(getRunMapPointSelectionKey(point))}">Rimuovi</button>
               </div>
             </div>
@@ -2562,7 +2821,11 @@
             <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
           </div>
           <div class="map-point-detail-actions">
-            <span class="map-point-detail-chip">${escapeHtml(formatCount(selectedPoints.length))} selezionati</span>
+            <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
+              <span class="switch-label">Selezione box</span>
+              <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
             <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
           </div>
         </div>
@@ -2577,6 +2840,7 @@
     function setRunMapSelectedPoints(points = []) {
       state.runMapSelectedPoints = Array.isArray(points) ? points : [];
       renderRunMapPointDetail(state.runMapSelectedPoints);
+      syncRunMapSelectionOverlay();
     }
 
     function setRunMapSelectedPoint(point = null) {
@@ -2611,6 +2875,29 @@
       if (!incoming.length) return;
       const current = getRunMapSelectedPoints();
       const currentKeys = new Set(current.map(point => getRunMapPointSelectionKey(point)));
+      const next = [...current];
+      incoming.forEach(point => {
+        const key = getRunMapPointSelectionKey(point);
+        if (currentKeys.has(key)) return;
+        currentKeys.add(key);
+        next.push(point);
+      });
+      setRunMapSelectedPoints(next);
+    }
+
+    function toggleRunMapSelectedPoints(points = []) {
+      const incoming = Array.isArray(points) ? points.filter(Boolean) : [];
+      if (!incoming.length) return;
+      const current = getRunMapSelectedPoints();
+      const incomingKeys = new Set(incoming.map(point => getRunMapPointSelectionKey(point)));
+      const currentKeys = new Set(current.map(point => getRunMapPointSelectionKey(point)));
+      const currentMatches = current.filter(point => incomingKeys.has(getRunMapPointSelectionKey(point)));
+
+      if (currentMatches.length === incoming.length) {
+        setRunMapSelectedPoints(current.filter(point => !incomingKeys.has(getRunMapPointSelectionKey(point))));
+        return;
+      }
+
       const next = [...current];
       incoming.forEach(point => {
         const key = getRunMapPointSelectionKey(point);
@@ -2804,22 +3091,14 @@
         if (selectionToken !== state.runMapSelectionToken) return;
         return;
       }
-      const resolvedFeatures = await resolveClusterLeavesForFeature(feature);
+      const resolvedFeatures = await resolveRunMapSelectionPoints([feature]);
       if (selectionToken !== state.runMapSelectionToken) return;
-      const context = {
-        sourceId: getRunMapFeatureSourceId(feature),
-        pointCount: getRunMapFeaturePointCount(feature),
-        clusterId: getRunMapFeatureClusterId(feature) ?? feature?.properties?.cluster_id ?? feature?.properties?.clusterId
-      };
-      const selectedPoints = Array.isArray(resolvedFeatures)
-        ? resolvedFeatures.map(resolvedFeature => extractRunMapPointSelection(resolvedFeature, context))
-        : [];
-      if (!selectedPoints.length) return;
-      if (selectedPoints.length > 1) {
-        addRunMapSelectedPoints(selectedPoints);
+      if (!Array.isArray(resolvedFeatures) || !resolvedFeatures.length) return;
+      if (resolvedFeatures.length > 1) {
+        toggleRunMapSelectedPoints(resolvedFeatures);
         return;
       }
-      toggleRunMapSelectedPoint(selectedPoints[0]);
+      toggleRunMapSelectedPoint(resolvedFeatures[0]);
     }
 
     function isRunMapDirectPointFeature(feature = null) {
@@ -2830,6 +3109,124 @@
     function pickRunMapSelectionFeature(features = []) {
       if (!Array.isArray(features) || !features.length) return null;
       return features.find(feature => isRunMapDirectPointFeature(feature)) || features[0] || null;
+    }
+
+    function isRunMapBoxSelectionTrigger(event = null) {
+      if (!event) return false;
+      return Boolean(state.runMapBoxSelectEnabled || event.shiftKey);
+    }
+
+    function getRunMapSelectionBounds(startPoint, currentPoint) {
+      if (!startPoint || !currentPoint) return null;
+      return [
+        [Math.min(startPoint.x, currentPoint.x), Math.min(startPoint.y, currentPoint.y)],
+        [Math.max(startPoint.x, currentPoint.x), Math.max(startPoint.y, currentPoint.y)]
+      ];
+    }
+
+    function getRunMapSelectionDistance(startPoint, currentPoint) {
+      if (!startPoint || !currentPoint) return 0;
+      return Math.hypot(currentPoint.x - startPoint.x, currentPoint.y - startPoint.y);
+    }
+
+    function beginRunMapBoxSelection(event = null) {
+      if (!state.runMap || !event || typeof event.clientX !== 'number' || typeof event.clientY !== 'number') return false;
+      if (event.button !== 0 || !isRunMapBoxSelectionTrigger(event)) return false;
+      const startPoint = getRunMapCanvasPointFromClient(event.clientX, event.clientY);
+      if (!startPoint) return false;
+
+      state.runMapBoxSelection = {
+        startPoint,
+        currentPoint: startPoint,
+        dragging: false
+      };
+      state.runMapBoxSelectionSuppressClick = true;
+      event.preventDefault();
+      event.stopPropagation();
+
+      window.addEventListener('mousemove', handleRunMapBoxSelectionMove, true);
+      window.addEventListener('mouseup', handleRunMapBoxSelectionUp, true);
+      window.addEventListener('blur', cancelRunMapBoxSelection, true);
+      return true;
+    }
+
+    function updateRunMapBoxSelection(event = null) {
+      const selection = state.runMapBoxSelection;
+      if (!selection || !event || typeof event.clientX !== 'number' || typeof event.clientY !== 'number') return;
+      const currentPoint = getRunMapCanvasPointFromClient(event.clientX, event.clientY);
+      if (!currentPoint) return;
+      selection.currentPoint = currentPoint;
+      if (!selection.dragging && getRunMapSelectionDistance(selection.startPoint, currentPoint) < 4) {
+        return;
+      }
+      selection.dragging = true;
+      renderRunMapSelectionBox(selection.startPoint, currentPoint);
+    }
+
+    async function finalizeRunMapBoxSelection(event = null) {
+      const selection = state.runMapBoxSelection;
+      if (!selection) return;
+      const currentPoint = event && typeof event.clientX === 'number' && typeof event.clientY === 'number'
+        ? getRunMapCanvasPointFromClient(event.clientX, event.clientY) || selection.currentPoint
+        : selection.currentPoint;
+      const dragging = Boolean(selection.dragging);
+      const bounds = getRunMapSelectionBounds(selection.startPoint, currentPoint || selection.startPoint);
+      const hasBox = dragging && bounds && Math.abs(bounds[1][0] - bounds[0][0]) >= 4 && Math.abs(bounds[1][1] - bounds[0][1]) >= 4;
+      const selectionToken = ++state.runMapSelectionToken;
+
+      cleanupRunMapBoxSelectionHandlers();
+      clearRunMapSelectionBox();
+
+      if (hasBox) {
+        const features = getRunMapSelectableFeaturesInBounds(bounds);
+        const selectedPoints = await resolveRunMapSelectionPoints(features);
+        if (selectionToken !== state.runMapSelectionToken) return;
+        addRunMapSelectedPoints(selectedPoints);
+        return;
+      }
+
+      if (!event || !state.runMap) return;
+      const layerIds = getRunMapSelectableLayerIds();
+      if (!layerIds.length) return;
+      const pickedFeature = pickRunMapSelectionFeature(state.runMap.queryRenderedFeatures([selection.startPoint.x, selection.startPoint.y], { layers: layerIds }));
+      if (!pickedFeature) return;
+      void selectRunMapPointFromFeature(pickedFeature);
+    }
+
+    function cleanupRunMapBoxSelectionHandlers() {
+      window.removeEventListener('mousemove', handleRunMapBoxSelectionMove, true);
+      window.removeEventListener('mouseup', handleRunMapBoxSelectionUp, true);
+      window.removeEventListener('blur', cancelRunMapBoxSelection, true);
+      if (state.runMap && state.runMap.getCanvas) {
+        state.runMap.getCanvas().style.cursor = state.runMapBoxSelectEnabled ? 'crosshair' : '';
+      }
+    }
+
+    function cancelRunMapBoxSelection() {
+      if (!state.runMapBoxSelection) return;
+      cleanupRunMapBoxSelectionHandlers();
+      clearRunMapSelectionBox();
+      state.runMapSelectionSuppressClick = false;
+    }
+
+    function handleRunMapBoxSelectionMove(event = null) {
+      if (!state.runMapBoxSelection) return;
+      updateRunMapBoxSelection(event);
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    function handleRunMapBoxSelectionUp(event = null) {
+      if (!state.runMapBoxSelection) return;
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      void finalizeRunMapBoxSelection(event);
+      state.runMapBoxSelection = null;
+      state.runMapBoxSelectionSuppressClick = true;
     }
 
     function getRunNoiseUrl(runId) {
@@ -2854,7 +3251,7 @@
     }
 
     function ensureNoiseLayerOnMap(noise) {
-      if (!state.runMap || !noise) return;
+      if (!isRunMapStyleReady() || !noise) return;
       const sourceId = 'noise-source';
       const clusterLayerId = 'noise-clusters';
       const countLayerId = 'noise-cluster-count';
@@ -2942,6 +3339,25 @@
       }
 
       state.runMapNoiseLayer = { sourceId, layerIds: [clusterLayerId, countLayerId, pointLayerId] };
+      syncRunMapSelectionOverlay();
+    }
+
+    function getRunMapNoiseVisibleCount() {
+      if (!state.runMap || !state.runMapNoiseLayer) return 0;
+      const layerIds = Array.isArray(state.runMapNoiseLayer.layerIds)
+        ? state.runMapNoiseLayer.layerIds.filter(layerId => layerId && layerId !== 'noise-cluster-count')
+        : [];
+      if (!layerIds.length) return 0;
+      const canvas = state.runMap.getCanvas ? state.runMap.getCanvas() : null;
+      const width = canvas ? (canvas.clientWidth || canvas.width || 0) : 0;
+      const height = canvas ? (canvas.clientHeight || canvas.height || 0) : 0;
+      if (!width || !height) return 0;
+      try {
+        const features = state.runMap.queryRenderedFeatures([[0, 0], [width, height]], { layers: layerIds });
+        return Array.isArray(features) ? features.length : 0;
+      } catch {
+        return 0;
+      }
     }
 
     function rehydrateVisibleNoise() {
@@ -2949,6 +3365,71 @@
       if (state.runMapNoisePayload) {
         ensureNoiseLayerOnMap(state.runMapNoisePayload);
       }
+    }
+
+    function scheduleRunMapNoiseSelectionRefresh(noiseCountFallback = 0) {
+      if (!state.runMap) return;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!state.runMap) return;
+          syncRunMapNoiseSelection(noiseCountFallback);
+        });
+      });
+    }
+
+    function isRunMapStyleReady() {
+      return Boolean(state.runMap)
+        && (typeof state.runMap.isStyleLoaded !== 'function' || state.runMap.isStyleLoaded());
+    }
+
+    function ensureRunMapSelectionOverlay() {
+      if (!isRunMapStyleReady()) {
+        state.runMapSelectionOverlayPending = true;
+        return;
+      }
+      state.runMapSelectionOverlayPending = false;
+      const sourceId = 'run-map-selection-source';
+      const layerId = 'run-map-selection-ring';
+      const data = buildRunMapSelectionGeoJson(getRunMapSelectedPoints());
+
+      if (state.runMap.getSource(sourceId)) {
+        state.runMap.getSource(sourceId).setData(data);
+      } else {
+        state.runMap.addSource(sourceId, {
+          type: 'geojson',
+          data
+        });
+      }
+
+      if (!state.runMap.getLayer(layerId)) {
+        state.runMap.addLayer({
+          id: layerId,
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-color': 'rgba(255, 255, 255, 0)',
+            'circle-radius': ['coalesce', ['get', 'selectionDisplayRadius'], ['get', 'selectionRadius'], 7.5],
+            'circle-stroke-color': '#ff0000',
+            'circle-stroke-width': 2,
+            'circle-opacity': 1
+          }
+        });
+      } else {
+        state.runMap.setPaintProperty(layerId, 'circle-color', 'rgba(255, 255, 255, 0)');
+        state.runMap.setPaintProperty(layerId, 'circle-radius', ['coalesce', ['get', 'selectionDisplayRadius'], ['get', 'selectionRadius'], 7.5]);
+        state.runMap.setPaintProperty(layerId, 'circle-stroke-color', '#ff0000');
+        state.runMap.setPaintProperty(layerId, 'circle-stroke-width', 2);
+        state.runMap.setPaintProperty(layerId, 'circle-opacity', 1);
+      }
+
+      if (state.runMap.getLayer(layerId)) {
+        state.runMap.moveLayer(layerId);
+      }
+    }
+
+    function syncRunMapSelectionOverlay() {
+      if (!state.runMap) return;
+      ensureRunMapSelectionOverlay();
     }
 
     function buildClusterBounds(cluster) {
@@ -3003,7 +3484,7 @@
     }
 
     function ensureClusterLayerOnMap(clusterId, cluster) {
-      if (!state.runMap || !cluster) return;
+      if (!isRunMapStyleReady() || !cluster) return;
       const sourceId = `cluster-source-${clusterId}`;
       const clusterLayerId = `cluster-clusters-${clusterId}`;
       const countLayerId = `cluster-count-${clusterId}`;
@@ -3085,6 +3566,7 @@
 
       state.runMapClusterLayers[clusterId] = { sourceId, layerIds: [clusterLayerId, countLayerId, pointLayerId] };
       state.runMapClusterBounds[clusterId] = buildClusterBounds(cluster);
+      syncRunMapSelectionOverlay();
     }
 
     function removeClusterLayers(clusterId) {
@@ -3145,7 +3627,11 @@
       }
       if (els.noisePointsCount) {
         const noiseCount = state.runMapNoisePayload?.PointCount;
-        els.noisePointsCount.textContent = `${formatCount(noiseCount ?? noiseCountFallback ?? 0)} punti`;
+        const totalNoiseCount = Number(noiseCount ?? noiseCountFallback ?? 0);
+        const visibleNoiseCount = getRunMapNoiseVisibleCount();
+        els.noisePointsCount.textContent = totalNoiseCount > 0
+          ? `${formatCount(totalNoiseCount)} punti (${formatCount(visibleNoiseCount)} visualizzati)`
+          : `${formatCount(totalNoiseCount)} punti`;
       }
       if (els.noisePointsMeta) {
         els.noisePointsMeta.textContent = (state.runMapNoisePayload?.PointCount ?? noiseCountFallback ?? 0)
@@ -3193,7 +3679,7 @@
         clearRunMapNoiseLayer();
         updateRunMapEmptyState();
         updateRunMapStatus('Punti fuori cluster non persistiti per questo run', 'error');
-        syncRunMapNoiseSelection(Number(run?.summary?.noisePointCount ?? 0));
+        scheduleRunMapNoiseSelectionRefresh(Number(run?.summary?.noisePointCount ?? 0));
         return;
       }
 
@@ -3203,7 +3689,7 @@
         clearRunMapNoiseLayer();
         updateRunMapEmptyState();
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi`, '');
-        syncRunMapNoiseSelection();
+        scheduleRunMapNoiseSelectionRefresh();
         return;
       }
 
@@ -3217,15 +3703,16 @@
         const noise = state.runMapNoisePayload;
         if (!noise) throw new Error('Punti fuori cluster non disponibili');
         ensureNoiseLayerOnMap(noise);
+        state.runMap.triggerRepaint?.();
         updateRunMapEmptyState();
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi · rumore attivo`, 'ok');
-        syncRunMapNoiseSelection();
+        scheduleRunMapNoiseSelectionRefresh();
       } catch (err) {
         state.runMapNoiseEnabled = false;
         clearRunMapNoiseLayer();
         updateRunMapEmptyState();
         updateRunMapStatus(`Errore punti fuori cluster: ${escapeHtml(err.message)}`, 'error');
-        syncRunMapNoiseSelection();
+        scheduleRunMapNoiseSelectionRefresh();
       }
     }
 
@@ -3300,7 +3787,7 @@
         if (els.noisePointsToggle) {
           els.noisePointsToggle.disabled = true;
         }
-        syncRunMapNoiseSelection(0);
+        scheduleRunMapNoiseSelectionRefresh(0);
         els.runMapClusters.innerHTML = '<div class="cluster-list-empty">Apri i risultati di un set e poi usa il tasto Mappa.</div>';
         syncRunMapBulkToggle();
         return;
@@ -3327,7 +3814,7 @@
       if (!files.length) {
         updateRunMapStatus('Nessun cluster disponibile per questo run', '');
         clearRunMapSelectedPoints();
-        syncRunMapNoiseSelection(noiseCount);
+        scheduleRunMapNoiseSelectionRefresh(noiseCount);
         els.runMapClusters.innerHTML = '<div class="cluster-list-empty">Questo run non ha file cluster da mostrare sulla mappa.</div>';
         syncRunMapBulkToggle();
         return;
@@ -3358,7 +3845,7 @@
         </div>
       `).join('');
       syncRunMapListSelection();
-      syncRunMapNoiseSelection(noiseCount);
+      scheduleRunMapNoiseSelectionRefresh(noiseCount);
       syncMapSettingsMenu();
       syncRunMapBulkToggle();
     }
@@ -3460,14 +3947,42 @@
           applyAllMapLayerVisibilities();
           rehydrateVisibleClusters();
           rehydrateVisibleNoise();
+          syncRunMapSelectionOverlay();
+          scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
         });
         state.runMap.on('load', () => {
           applyAllMapLayerVisibilities();
           rehydrateVisibleClusters();
           rehydrateVisibleNoise();
+          syncRunMapSelectionOverlay();
+          scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
         });
+        state.runMap.on('render', () => {
+          if (!state.runMapNoiseEnabled) return;
+          syncRunMapNoiseSelection(Number(state.runMapNoisePayload?.PointCount ?? 0));
+        });
+        state.runMap.on('moveend', () => {
+          if (!state.runMapNoiseEnabled) return;
+          scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
+        });
+        state.runMap.on('zoomend', () => {
+          if (!state.runMapNoiseEnabled) return;
+          scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
+        });
+        state.runMap.on('resize', () => {
+          if (!state.runMapNoiseEnabled) return;
+          scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
+        });
+        els.resultsMap.addEventListener('mousedown', event => {
+          if (!state.runMap) return;
+          beginRunMapBoxSelection(event);
+        }, true);
         state.runMap.on('click', event => {
           if (!state.runMap) return;
+          if (state.runMapBoxSelectionSuppressClick) {
+            state.runMapBoxSelectionSuppressClick = false;
+            return;
+          }
           const layerIds = getRunMapSelectableLayerIds();
           if (!layerIds.length) {
             return;
@@ -3481,6 +3996,10 @@
         });
         state.runMap.on('mousemove', event => {
           if (!state.runMap) return;
+          if (state.runMapBoxSelectEnabled || state.runMapBoxSelection) {
+            state.runMap.getCanvas().style.cursor = 'crosshair';
+            return;
+          }
           const layerIds = getRunMapSelectableLayerIds();
           if (!layerIds.length) {
             state.runMap.getCanvas().style.cursor = '';
@@ -3491,7 +4010,7 @@
         });
         state.runMap.on('mouseout', () => {
           if (!state.runMap) return;
-          state.runMap.getCanvas().style.cursor = '';
+          state.runMap.getCanvas().style.cursor = state.runMapBoxSelectEnabled ? 'crosshair' : '';
         });
       }
       requestAnimationFrame(() => {
@@ -4117,6 +4636,13 @@
       });
     }
     if (els.runMapPointDetail) {
+      els.runMapPointDetail.addEventListener('change', event => {
+        const toggle = event.target.closest('[data-run-map-box-toggle] .switch-input');
+        if (toggle) {
+          setRunMapBoxSelectEnabled(toggle.checked);
+          return;
+        }
+      });
       els.runMapPointDetail.addEventListener('click', event => {
         const clearButton = event.target.closest('[data-run-map-clear-selection]');
         const removeButton = event.target.closest('[data-run-map-point-remove]');
@@ -4160,6 +4686,7 @@
     rememberOriginalLabels();
     populateInfractionOptions();
     resetExecutionSetForm();
+    updateRunMapBoxSelectButton();
     syncMapSettingsMenu();
     setMapSettingsMenuOpen(false);
     switchPage(state.activePageId);
