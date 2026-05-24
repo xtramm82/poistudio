@@ -906,6 +906,12 @@
     .map-point-detail {
       display: grid;
       gap: 12px;
+      min-width: 0;
+    }
+    .map-point-detail-summary,
+    .map-point-detail-list-box {
+      display: grid;
+      gap: 12px;
       padding: 16px;
       border-radius: 18px;
       border: 1px solid rgba(120, 113, 108, 0.14);
@@ -945,26 +951,6 @@
       line-height: 1.35;
       word-break: break-word;
     }
-    .map-point-detail-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: flex-end;
-      flex-shrink: 0;
-    }
-    .map-point-detail-chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 28px;
-      padding: 5px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(120, 113, 108, 0.14);
-      background: rgba(120, 113, 108, 0.08);
-      color: var(--text);
-      font-size: 0.82rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
     .map-point-detail-actions {
       display: flex;
       align-items: center;
@@ -979,6 +965,25 @@
       min-width: 0;
       padding: 8px 10px;
       white-space: nowrap;
+    }
+    .map-point-detail-card-remove {
+      border: 0;
+      background: transparent;
+      color: #b91c1c;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.32rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .map-point-detail-card-remove:hover {
+      background: rgba(185, 28, 28, 0.08);
+      color: #991b1b;
     }
     .map-point-detail-scroll {
       max-height: min(42vh, 420px);
@@ -1012,13 +1017,6 @@
       gap: 4px;
       min-width: 0;
     }
-    .map-point-detail-card-kicker {
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-    }
     .map-point-detail-card-title {
       font-size: 0.95rem;
       font-weight: 800;
@@ -1034,11 +1032,46 @@
     }
     .map-point-detail-card-actions {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: flex-end;
       gap: 8px;
       flex-shrink: 0;
       flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .map-point-detail-card-head {
+      cursor: pointer;
+    }
+    .map-point-detail-card-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: auto;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1;
+      transition: transform 120ms ease, color 120ms ease;
+      flex-shrink: 0;
+      margin-left: 2px;
+      align-self: center;
+    }
+    .map-point-detail-card-head:hover .map-point-detail-card-toggle {
+      color: var(--accent);
+    }
+    .map-point-detail-card.is-collapsed .map-point-detail-card-toggle {
+      transform: rotate(-90deg);
+    }
+    .map-point-detail-card-body {
+      display: grid;
+      gap: 12px;
+    }
+    .map-point-detail-card-body[hidden] {
+      display: none !important;
     }
     .map-point-detail-card-index {
       display: inline-flex;
@@ -1855,6 +1888,7 @@
       runMapNoisePayload: null,
       runMapNoiseLayer: null,
       runMapSelectedPoints: [],
+      runMapSelectedPointCollapsedByKey: {},
       runMapSelectionOverlayPending: false,
       runMapSelectionToken: 0,
       runMapBoxSelectEnabled: false,
@@ -2736,43 +2770,67 @@
       return Array.isArray(state.runMapSelectedPoints) ? state.runMapSelectedPoints : [];
     }
 
+    function getRunMapSelectedPointByKey(key = '') {
+      return getRunMapSelectedPoints().find(point => getRunMapPointSelectionKey(point) === key) || null;
+    }
+
+    function getRunMapPointDetailCollapsedKey(point = {}) {
+      return getRunMapPointSelectionKey(point);
+    }
+
+    function isRunMapPointDetailCollapsed(point = {}) {
+      const key = getRunMapPointDetailCollapsedKey(point);
+      if (!key) return true;
+      if (!Object.prototype.hasOwnProperty.call(state.runMapSelectedPointCollapsedByKey, key)) {
+        return true;
+      }
+      return Boolean(state.runMapSelectedPointCollapsedByKey[key]);
+    }
+
+    function setRunMapPointDetailCollapsed(point = {}, collapsed = false) {
+      const key = getRunMapPointDetailCollapsedKey(point);
+      if (!key) return;
+      state.runMapSelectedPointCollapsedByKey = {
+        ...state.runMapSelectedPointCollapsedByKey,
+        [key]: Boolean(collapsed)
+      };
+    }
+
+    function toggleRunMapPointDetailCollapsed(point = {}) {
+      const key = getRunMapPointDetailCollapsedKey(point);
+      if (!key) return;
+      setRunMapPointDetailCollapsed(point, !isRunMapPointDetailCollapsed(point));
+      renderRunMapPointDetail(getRunMapSelectedPoints());
+    }
+
     function renderRunMapPointDetail(points = []) {
       if (!els.runMapPointDetail) return;
       const selectedPoints = Array.isArray(points) ? points : [];
+      const scrollBoxBefore = els.runMapPointDetail.querySelector('.map-point-detail-scroll');
+      const scrollTopBefore = scrollBoxBefore ? scrollBoxBefore.scrollTop : 0;
+      const scrollLeftBefore = scrollBoxBefore ? scrollBoxBefore.scrollLeft : 0;
       if (!selectedPoints.length) {
         els.runMapPointDetail.innerHTML = '<div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>';
         return;
       }
 
-      const renderPointCard = (point, index) => {
-        const pointIdText = formatRunMapPointValue(point.Id);
+      const selectedKeys = new Set(selectedPoints.map(point => getRunMapPointDetailCollapsedKey(point)));
+      state.runMapSelectedPointCollapsedByKey = Object.fromEntries(
+        Object.entries(state.runMapSelectedPointCollapsedByKey || {})
+          .filter(([key]) => selectedKeys.has(key))
+      );
+
+      const renderPointCard = (point) => {
         const title = point.IndirizzoFormattato
           || point.Citta
           || (point.selectedFromAggregate && Number.isFinite(Number(point.selectedAggregateClusterId ?? point.clusterId))
             ? `Cluster ${Number(point.selectedAggregateClusterId ?? point.clusterId)}`
-            : (pointIdText ? `Punto ${pointIdText}` : 'Punto selezionato'));
+            : 'Punto selezionato');
         const subtitleParts = [];
         if (point.Citta) subtitleParts.push(point.Citta);
         const coords = [formatRunMapPointCoordinate(point.Latitudine), formatRunMapPointCoordinate(point.Longitudine)].filter(Boolean);
         if (coords.length === 2) subtitleParts.push(`(${coords.join(', ')})`);
-        const badges = [];
-        badges.push(`<span class="map-point-detail-chip">${escapeHtml(getRunMapPointSelectionLabel(point))}</span>`);
-        if (point.selectedFromAggregate) {
-          badges.push(`<span class="map-point-detail-chip">Aggregato · ${escapeHtml(formatCount(point.selectedAggregateCount || 0))} punti</span>`);
-        }
-        if (point.IdTipoInfrazione != null) {
-          badges.push(`<span class="map-point-detail-chip">${escapeHtml(`${point.IdTipoInfrazione} · ${getInfractionLabel(point.IdTipoInfrazione)}`)}</span>`);
-        }
-        if (point.aggregatePointRef) {
-          badges.push(`<span class="map-point-detail-chip">Ref ${escapeHtml(point.aggregatePointRef)}</span>`);
-        }
-        if (pointIdText !== '') {
-          badges.push(`<span class="map-point-detail-chip">Id ${escapeHtml(pointIdText)}</span>`);
-        }
-
         const fields = [
-          ['Id', formatRunMapPointValue(point.Id)],
-          ['Id rappresentato', formatRunMapPointValue(point.aggregatePointId)],
           ['IdDataentry', formatRunMapPointValue(point.IdDataentry)],
           ['IdOcr', formatRunMapPointValue(point.IdOcr)],
           ['Città', formatRunMapPointValue(point.Citta)],
@@ -2781,60 +2839,76 @@
           ['Latitudine', formatRunMapPointCoordinate(point.Latitudine)],
           ['Longitudine', formatRunMapPointCoordinate(point.Longitudine)],
           ['Tipo infrazione', point.IdTipoInfrazione == null ? '' : `${formatRunMapPointValue(point.IdTipoInfrazione)} · ${getInfractionLabel(point.IdTipoInfrazione)}`],
-          ['Origine', formatRunMapPointValue(point.sourceLabel || getRunMapPointSelectionLabel(point))],
-          ['Punto sorgente', point.selectedFromAggregate ? `Punto del gruppo selezionato (${formatCount(point.selectedAggregateCount || 0)} punti)` : 'Punto direttamente cliccato']
+          ['Origine', formatRunMapPointValue(point.sourceLabel || getRunMapPointSelectionLabel(point))]
         ].filter(([, value]) => value !== '');
+        const collapsed = isRunMapPointDetailCollapsed(point);
 
         return `
-          <article class="map-point-detail-card" data-run-map-point-key="${escapeHtml(getRunMapPointSelectionKey(point))}">
-              <div class="map-point-detail-card-head">
+          <article class="map-point-detail-card ${collapsed ? 'is-collapsed' : ''}" data-run-map-point-key="${escapeHtml(getRunMapPointSelectionKey(point))}">
+              <div class="map-point-detail-card-head" role="button" tabindex="0" aria-expanded="${collapsed ? 'false' : 'true'}" data-run-map-point-toggle="${escapeHtml(getRunMapPointSelectionKey(point))}">
                 <div class="map-point-detail-card-copy">
-                  <div class="map-point-detail-card-kicker">Punto ${escapeHtml(formatCount(index + 1))}</div>
                   <div class="map-point-detail-card-title">${escapeHtml(title)}</div>
                   ${subtitleParts.length ? `<div class="map-point-detail-card-subtitle">${escapeHtml(subtitleParts.join(' · '))}</div>` : ''}
                 </div>
               <div class="map-point-detail-card-actions">
                 <span class="map-point-detail-card-index">${escapeHtml(getRunMapPointSelectionKindLabel(point))}</span>
-                <button class="btn ghost map-point-detail-card-remove" type="button" data-run-map-point-remove="${escapeHtml(getRunMapPointSelectionKey(point))}">Rimuovi</button>
+                <button class="map-point-detail-card-remove" type="button" data-run-map-point-remove="${escapeHtml(getRunMapPointSelectionKey(point))}" aria-label="Rimuovi">
+                  <span aria-hidden="true">×</span>
+                </button>
+                <span class="map-point-detail-card-toggle" aria-hidden="true">▾</span>
               </div>
             </div>
-            <div class="map-point-detail-badges">
-              ${badges.join('')}
-            </div>
-            <div class="map-point-detail-grid">
-              ${fields.map(([label, value]) => `
-                <div class="map-point-detail-item">
-                  <div class="map-point-detail-label">${escapeHtml(label)}</div>
-                  <div class="map-point-detail-value">${escapeHtml(value)}</div>
-                </div>
-              `).join('')}
+            <div class="map-point-detail-card-body" ${collapsed ? 'hidden' : ''}>
+              <div class="map-point-detail-grid">
+                ${fields.map(([label, value]) => `
+                  <div class="map-point-detail-item">
+                    <div class="map-point-detail-label">${escapeHtml(label)}</div>
+                    <div class="map-point-detail-value">${escapeHtml(value)}</div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           </article>
         `;
       };
 
       els.runMapPointDetail.innerHTML = `
-        <div class="map-point-detail-head">
-          <div class="map-point-detail-copy">
-            <div class="map-point-detail-kicker">Dettagli selezionati</div>
-            <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
-            <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
-          </div>
-          <div class="map-point-detail-actions">
-            <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
-              <span class="switch-label">Selezione box</span>
-              <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
-              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
-            </label>
-            <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
+        <div class="map-point-detail-summary">
+          <div class="map-point-detail-head">
+            <div class="map-point-detail-copy">
+              <div class="map-point-detail-kicker">Dettagli selezionati</div>
+              <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
+              <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
+            </div>
+            <div class="map-point-detail-actions">
+              <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
+                <span class="switch-label">Selezione box</span>
+                <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
+                <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+              </label>
+              <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
+            </div>
           </div>
         </div>
-        <div class="map-point-detail-scroll">
-          <div class="map-point-detail-list">
-            ${selectedPoints.map((point, index) => renderPointCard(point, index)).join('')}
+        <div class="map-point-detail-list-box">
+          <div class="map-point-detail-scroll">
+            <div class="map-point-detail-list">
+              ${selectedPoints.map(point => renderPointCard(point)).join('')}
+            </div>
           </div>
         </div>
       `;
+
+      const scrollBoxAfter = els.runMapPointDetail.querySelector('.map-point-detail-scroll');
+      if (scrollBoxAfter) {
+        window.requestAnimationFrame(() => {
+          if (!els.runMapPointDetail) return;
+          const currentScrollBox = els.runMapPointDetail.querySelector('.map-point-detail-scroll');
+          if (!currentScrollBox) return;
+          currentScrollBox.scrollTop = scrollTopBefore;
+          currentScrollBox.scrollLeft = scrollLeftBefore;
+        });
+      }
     }
 
     function setRunMapSelectedPoints(points = []) {
@@ -4644,6 +4718,16 @@
         }
       });
       els.runMapPointDetail.addEventListener('click', event => {
+        const toggleHeader = event.target.closest('[data-run-map-point-toggle]');
+        if (toggleHeader && !event.target.closest('button, a, input, label, select, textarea')) {
+          const point = getRunMapSelectedPointByKey(toggleHeader.dataset.runMapPointToggle || '');
+          if (point) {
+            toggleRunMapPointDetailCollapsed(point);
+          }
+          return;
+        }
+      });
+      els.runMapPointDetail.addEventListener('click', event => {
         const clearButton = event.target.closest('[data-run-map-clear-selection]');
         const removeButton = event.target.closest('[data-run-map-point-remove]');
         if (clearButton) {
@@ -4652,6 +4736,16 @@
         }
         if (removeButton) {
           pruneRunMapSelectedPoints(point => getRunMapPointSelectionKey(point) === removeButton.dataset.runMapPointRemove);
+        }
+      });
+      els.runMapPointDetail.addEventListener('keydown', event => {
+        const toggleHeader = event.target.closest('[data-run-map-point-toggle]');
+        if (!toggleHeader) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        const point = getRunMapSelectedPointByKey(toggleHeader.dataset.runMapPointToggle || '');
+        if (point) {
+          toggleRunMapPointDetailCollapsed(point);
         }
       });
     }
