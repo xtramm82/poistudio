@@ -851,23 +851,32 @@
     }
     .map-page-title-row {
       display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 12px;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0;
       min-width: 0;
       flex: 1;
-      text-align: center;
+      text-align: left;
     }
     .map-page-title-row .box-head-title {
       flex: 0 0 auto;
     }
-    .map-page-hint {
+    .map-page-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      min-width: 0;
+      margin-left: auto;
+    }
+    .map-page-status {
       color: var(--muted);
       font-size: 0.95rem;
       font-weight: 700;
       line-height: 1.35;
       min-width: 0;
       max-width: 100%;
+      text-align: right;
     }
     .map-layout {
       --map-stage-height: 560px;
@@ -1448,18 +1457,26 @@
       width: 100%;
       justify-self: stretch;
     }
-    .poi-manager-topbar {
-      display: flex;
+    .poi-manager-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      justify-content: space-between;
       gap: 12px;
-      flex-wrap: wrap;
+      margin-bottom: 0;
     }
-    .poi-manager-selection-note {
-      font-size: 0.9rem;
-      color: var(--muted);
-      font-weight: 700;
-      line-height: 1.4;
+    .poi-manager-head .box-head-main {
+      align-items: start;
+    }
+    .poi-manager-head .box-head-main h3 {
+      margin: 0;
+    }
+    .poi-manager-head .btn {
+      justify-self: center;
+      white-space: nowrap;
+    }
+    .poi-manager-head .box-status {
+      justify-self: end;
+      text-align: right;
     }
     .poi-manager-layout {
       display: grid;
@@ -1615,8 +1632,18 @@
       .cluster-list { max-height: none; }
       .map-page-head { align-items: flex-start; flex-direction: column; }
       .map-page-title-row { justify-content: flex-start; text-align: left; }
+      .map-page-actions { width: 100%; justify-content: space-between; }
       .map-sidebar-title-row { align-items: flex-start; flex-direction: column; }
       .map-sidebar-head .box-status { white-space: normal; }
+      .poi-manager-head {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+      }
+      .poi-manager-head .btn,
+      .poi-manager-head .box-status {
+        justify-self: stretch;
+        text-align: left;
+      }
       .poi-manager-layout { grid-template-columns: 1fr; }
     }
     @media (max-width: 720px) {
@@ -1780,9 +1807,9 @@
       <div class="map-page-head">
         <div class="map-page-title-row">
           <h2 class="box-head-title" id="mapPageTitle">Mappa cluster</h2>
-          <div class="map-page-hint" id="mapPageHint">Seleziona un log per caricare i cluster corrispondenti.</div>
         </div>
-        <div class="box-head-actions">
+        <div class="map-page-actions">
+          <div class="inline-status box-status map-page-status" id="mapPageStatus" aria-live="polite">Seleziona un log per caricare i cluster corrispondenti.</div>
           <div class="map-settings" id="mapSettings">
             <button class="btn ghost map-settings-btn" id="mapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="mapSettingsMenu">⚙</button>
             <div class="map-settings-menu" id="mapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
@@ -1893,15 +1920,12 @@
         </div>
       </div>
       <div class="box poi-manager-box">
-        <div class="box-head">
+        <div class="box-head poi-manager-head">
           <div class="box-head-main">
             <h3>Gesione POI</h3>
           </div>
-          <div class="inline-status box-status" id="clusterPoiStatus" aria-live="polite">Pronto</div>
-        </div>
-        <div class="poi-manager-topbar">
-          <div class="poi-manager-selection-note" id="clusterPoiSelectionNote">0 punti selezionati nel box precedente.</div>
           <button class="btn primary" id="clusterPoiCreateBtn" type="button">Crea POI</button>
+          <div class="inline-status box-status" id="clusterPoiStatus" aria-live="polite">Pronto</div>
         </div>
         <div class="poi-manager-layout">
           <div class="poi-manager-panel box">
@@ -2200,7 +2224,6 @@
       runProgressStats: document.getElementById('runProgressStats'),
       runResultsList: document.getElementById('runResultsList'),
       mapPageTitle: document.getElementById('mapPageTitle'),
-      mapPageHint: document.getElementById('mapPageHint'),
       mapPageStatus: document.getElementById('mapPageStatus'),
       mapSettings: document.getElementById('mapSettings'),
       mapSettingsBtn: document.getElementById('mapSettingsBtn'),
@@ -2216,7 +2239,6 @@
       runMapSelectionBox: document.getElementById('runMapSelectionBox'),
       resultsMapEmpty: document.getElementById('resultsMapEmpty'),
       clusterPoiStatus: document.getElementById('clusterPoiStatus'),
-      clusterPoiSelectionNote: document.getElementById('clusterPoiSelectionNote'),
       clusterPoiCreateBtn: document.getElementById('clusterPoiCreateBtn'),
       clusterPoiFormTitle: document.getElementById('clusterPoiFormTitle'),
       clusterPoiFormShell: document.getElementById('clusterPoiFormShell'),
@@ -3389,7 +3411,7 @@
     }
 
     function renderClusterPoiManager() {
-      if (!els.clusterPoiSelectionNote) return;
+      if (!els.clusterPoiCreateBtn) return;
       const selectedPoints = getRunMapSelectedPoints();
       const editingItem = getClusterPoiEditingItem();
       if (state.clusterPoiMode === 'edit' && !editingItem) {
@@ -3405,8 +3427,9 @@
       const formEnabled = isEdit || (isCreate && workingPoints.length > 0);
       const submitLabel = isEdit ? 'Modifica' : 'Inserisci';
       const title = isEdit ? 'Modifica POI' : 'Inserimento POI';
+      const selectedCountLabel = selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`;
 
-      els.clusterPoiSelectionNote.textContent = `${formatCount(selectedPoints.length)} punti selezionati nel box precedente.`;
+      els.clusterPoiCreateBtn.textContent = `Crea POI per ${selectedCountLabel}`;
       els.clusterPoiCreateBtn.disabled = state.clusterPoiSaving || selectedPoints.length === 0;
       els.clusterPoiFormTitle.textContent = title;
       els.clusterPoiFormShell.setAttribute('aria-disabled', formEnabled ? 'false' : 'true');
@@ -4508,12 +4531,6 @@
         );
       }
       if (els.mapPageTitle) els.mapPageTitle.textContent = run ? `Mappa - ${run.setName || 'Set senza nome'}` : 'Mappa cluster';
-      if (els.mapPageHint) {
-        els.mapPageHint.textContent = run
-          ? `Eseguito il ${executionDate || 'n/d'} · ${formatCount(clusterCount)} cluster disponibili.`
-          : 'Seleziona un log per caricare i cluster corrispondenti.';
-      }
-
       if (!run) {
         updateRunMapStatus('Seleziona un risultato per usare la mappa', '');
         if (els.noisePointsToggle) {
