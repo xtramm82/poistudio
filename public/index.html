@@ -842,17 +842,48 @@
     .run-results-tabs {
       margin-bottom: 2px;
     }
+    .map-page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+    }
+    .map-page-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+      text-align: center;
+    }
+    .map-page-title-row .box-head-title {
+      flex: 0 0 auto;
+    }
+    .map-page-hint {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.35;
+      min-width: 0;
+      max-width: 100%;
+    }
     .map-layout {
+      --map-stage-height: 560px;
       display: grid;
       grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
       gap: 16px;
       align-items: start;
+      width: 100%;
+      justify-self: stretch;
     }
     .map-workspace {
       display: grid;
       gap: 12px;
       min-width: 0;
       align-content: start;
+      min-height: 0;
     }
     .map-stage {
       display: grid;
@@ -862,7 +893,8 @@
     }
     .map-stage-main {
       position: relative;
-      min-height: 560px;
+      height: var(--map-stage-height);
+      min-height: 0;
       border-radius: 20px;
       overflow: hidden;
       border: 1px solid rgba(120, 113, 108, 0.16);
@@ -872,7 +904,7 @@
     }
     .results-map {
       width: 100%;
-      height: 560px;
+      height: 100%;
     }
     .map-selection-box {
       position: absolute;
@@ -907,17 +939,7 @@
       display: grid;
       gap: 12px;
       min-width: 0;
-    }
-    .map-point-detail-summary,
-    .map-point-detail-list-box {
-      display: grid;
-      gap: 12px;
-      padding: 16px;
-      border-radius: 18px;
-      border: 1px solid rgba(120, 113, 108, 0.14);
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 12px 28px rgba(120, 113, 108, 0.08);
-      min-width: 0;
+      margin: 18px 0 0;
     }
     .map-point-detail-head {
       display: flex;
@@ -930,13 +952,6 @@
       display: grid;
       gap: 4px;
       min-width: 0;
-    }
-    .map-point-detail-kicker {
-      font-size: 0.74rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
     }
     .map-point-detail-title {
       font-size: 1rem;
@@ -994,6 +1009,7 @@
     .map-point-detail-list {
       display: grid;
       gap: 12px;
+      min-width: 0;
     }
     .map-point-detail-card {
       display: grid;
@@ -1127,10 +1143,22 @@
       display: grid;
       gap: 12px;
       align-content: start;
+      min-height: 0;
+      height: var(--map-stage-height);
+      overflow: hidden;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      width: 100%;
     }
     .map-sidebar-head {
       display: grid;
-      gap: 6px;
+      gap: 10px;
+    }
+    .map-sidebar-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
     }
     .map-sidebar-actions {
       display: flex;
@@ -1142,6 +1170,7 @@
     .map-sidebar-title {
       font-size: 0.98rem;
       font-weight: 800;
+      margin: 0;
     }
     .map-sidebar-note {
       font-size: 0.82rem;
@@ -1151,7 +1180,9 @@
     .cluster-list {
       display: grid;
       gap: 10px;
-      max-height: 560px;
+      min-height: 0;
+      height: 100%;
+      max-height: none;
       overflow: auto;
       padding-right: 4px;
     }
@@ -1349,6 +1380,10 @@
       font-size: 0.88rem;
       white-space: nowrap;
     }
+    .map-sidebar-head .box-status {
+      margin-top: 0;
+      white-space: nowrap;
+    }
     .noise-toggle {
       display: inline-flex;
       align-items: center;
@@ -1387,6 +1422,26 @@
     .collapsible-content[hidden] {
       display: none !important;
     }
+    .map-point-detail-box {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+      justify-self: stretch;
+    }
+    .map-point-detail-box .box-head {
+      margin-bottom: 0;
+    }
+    .map-point-detail-box h3 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+    .map-point-detail {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      margin: 0;
+    }
     @media (max-width: 1100px) {
       .grid-3, .split { grid-template-columns: 1fr; }
       .progress-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1395,8 +1450,12 @@
       .selector-card { width: 100%; }
       .content-box { width: 100%; }
       .map-layout { grid-template-columns: 1fr; }
-      .map-stage-main, .results-map { min-height: 420px; height: 420px; }
+      .map-layout { --map-stage-height: 420px; }
       .cluster-list { max-height: none; }
+      .map-page-head { align-items: flex-start; flex-direction: column; }
+      .map-page-title-row { justify-content: flex-start; text-align: left; }
+      .map-sidebar-title-row { align-items: flex-start; flex-direction: column; }
+      .map-sidebar-head .box-status { white-space: normal; }
     }
     @media (max-width: 720px) {
       .shell { padding: 14px; }
@@ -1425,7 +1484,7 @@
       .run-log-actions {
         width: auto;
       }
-      .map-stage-main, .results-map { min-height: 360px; height: 360px; }
+      .map-layout { --map-stage-height: 360px; }
       .map-point-detail-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -1550,111 +1609,119 @@
     </section>
 
     <section id="map-page" class="page">
-      <div class="box content-box results-box">
-        <div class="box-head">
-          <div class="box-head-main">
-            <h2 class="box-head-title" id="mapPageTitle">Mappa cluster</h2>
-            <div class="box-head-hint" id="mapPageHint">Seleziona un log per caricare i cluster corrispondenti.</div>
-          </div>
-          <div class="box-head-actions">
-            <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
-            <div class="map-settings" id="mapSettings">
-              <button class="btn ghost map-settings-btn" id="mapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="mapSettingsMenu">⚙</button>
-              <div class="map-settings-menu" id="mapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
-                <div class="map-settings-title">Layer vettoriali</div>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="poi">
-                  <span>POI generici</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="transit_poi">
-                  <span>Trasporti POI</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="airport_labels">
-                  <span>Aeroporti</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="place_labels">
-                  <span>Nomi luoghi</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="water_labels">
-                  <span>Nomi acqua</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="road_names">
-                  <span>Nomi strade</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="pedestrian_paths">
-                  <span>Percorsi pedonali</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="road_shields">
-                  <span>Cartelli stradali</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="road_direction">
-                  <span>Direzione strade</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="transit_lines">
-                  <span>Linee trasporto</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="boundary_lines">
-                  <span>Confini</span>
-                </label>
-                <label class="map-setting-option">
-                  <input type="checkbox" name="mapLayerToggle" value="housenumbers" disabled>
-                  <span>Numeri civici</span>
-                </label>
-                <div class="map-settings-note">Il controllo agisce sui layer vettoriali disponibili nello style 2D corrente. I numeri civici non sono esposti dallo style corrente.</div>
-              </div>
+      <div class="map-page-head">
+        <div class="map-page-title-row">
+          <h2 class="box-head-title" id="mapPageTitle">Mappa cluster</h2>
+          <div class="map-page-hint" id="mapPageHint">Seleziona un log per caricare i cluster corrispondenti.</div>
+        </div>
+        <div class="box-head-actions">
+          <div class="map-settings" id="mapSettings">
+            <button class="btn ghost map-settings-btn" id="mapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="mapSettingsMenu">⚙</button>
+            <div class="map-settings-menu" id="mapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
+              <div class="map-settings-title">Layer vettoriali</div>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="poi">
+                <span>POI generici</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="transit_poi">
+                <span>Trasporti POI</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="airport_labels">
+                <span>Aeroporti</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="place_labels">
+                <span>Nomi luoghi</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="water_labels">
+                <span>Nomi acqua</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_names">
+                <span>Nomi strade</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="pedestrian_paths">
+                <span>Percorsi pedonali</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_shields">
+                <span>Cartelli stradali</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_direction">
+                <span>Direzione strade</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="transit_lines">
+                <span>Linee trasporto</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="boundary_lines">
+                <span>Confini</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="housenumbers" disabled>
+                <span>Numeri civici</span>
+              </label>
+              <div class="map-settings-note">Il controllo agisce sui layer vettoriali disponibili nello style 2D corrente. I numeri civici non sono esposti dallo style corrente.</div>
             </div>
           </div>
         </div>
-        <div class="map-layout">
-          <div class="map-workspace">
-            <div class="map-stage">
-              <div class="map-stage-main">
-                <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
-                <div class="map-selection-box" id="runMapSelectionBox" hidden aria-hidden="true"></div>
-                <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
-              </div>
-              <div class="map-point-detail" id="runMapPointDetail" aria-live="polite">
-                <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>
-              </div>
+      </div>
+      <div class="map-layout">
+        <div class="map-workspace">
+          <div class="map-stage">
+            <div class="map-stage-main">
+              <div class="results-map" id="resultsMap" aria-label="Mappa MapLibre dei cluster"></div>
+              <div class="map-selection-box" id="runMapSelectionBox" hidden aria-hidden="true"></div>
+              <div class="map-empty" id="resultsMapEmpty">Attiva uno o piu cluster dalla lista a destra per visualizzare i punti sulla mappa.</div>
             </div>
           </div>
-          <div class="map-sidebar">
-              <div class="map-sidebar-head">
-                <div class="map-sidebar-actions">
-                  <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
-                </div>
-              </div>
-            <div class="cluster-item cluster-noise" id="noisePointsBox">
-              <div class="cluster-item-top">
-                <div class="cluster-item-lead">
-                  <div class="cluster-item-header">
-                    <div class="cluster-item-title-row">
-                      <div class="cluster-item-title">Punti fuori cluster</div>
-                      <div class="cluster-item-count" id="noisePointsCount">0 punti</div>
-                    </div>
-                    <div class="cluster-item-meta" id="noisePointsMeta">Punti non assegnati a nessun cluster</div>
+        </div>
+        <div class="map-sidebar box">
+          <div class="map-sidebar-head">
+            <div class="map-sidebar-title-row">
+              <h3 class="map-sidebar-title">Cluster disponibili</h3>
+              <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
+            </div>
+            <div class="map-sidebar-actions">
+              <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
+            </div>
+          </div>
+          <div class="cluster-item cluster-noise" id="noisePointsBox">
+            <div class="cluster-item-top">
+              <div class="cluster-item-lead">
+                <div class="cluster-item-header">
+                  <div class="cluster-item-title-row">
+                    <div class="cluster-item-title">Punti fuori cluster</div>
+                    <div class="cluster-item-count" id="noisePointsCount">0 punti</div>
                   </div>
-                </div>
-                <div class="cluster-item-actions">
-                  <label class="noise-toggle" aria-label="Mostra punti fuori cluster">
-                    <input type="checkbox" class="switch-input" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
-                    <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
-                  </label>
+                  <div class="cluster-item-meta" id="noisePointsMeta">Punti non assegnati a nessun cluster</div>
                 </div>
               </div>
+              <div class="cluster-item-actions">
+                <label class="noise-toggle" aria-label="Mostra punti fuori cluster">
+                  <input type="checkbox" class="switch-input" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
+                  <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+              </div>
             </div>
-            <div class="cluster-list" id="runMapClusters"></div>
           </div>
+          <div class="cluster-list" id="runMapClusters"></div>
+        </div>
+      </div>
+      <div class="box map-point-detail-box">
+        <div class="box-head">
+          <div class="box-head-main">
+            <h3>Dettagli selezionati</h3>
+          </div>
+        </div>
+        <div class="map-point-detail" id="runMapPointDetail" aria-live="polite">
+          <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>
         </div>
       </div>
     </section>
@@ -2873,28 +2940,23 @@
       };
 
       els.runMapPointDetail.innerHTML = `
-        <div class="map-point-detail-summary">
-          <div class="map-point-detail-head">
-            <div class="map-point-detail-copy">
-              <div class="map-point-detail-kicker">Dettagli selezionati</div>
-              <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
-              <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
-            </div>
-            <div class="map-point-detail-actions">
-              <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
-                <span class="switch-label">Selezione box</span>
-                <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
-                <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
-              </label>
-              <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
-            </div>
+        <div class="map-point-detail-head">
+          <div class="map-point-detail-copy">
+            <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
+            <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
+          </div>
+          <div class="map-point-detail-actions">
+            <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
+              <span class="switch-label">Selezione box</span>
+              <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
+            <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
           </div>
         </div>
-        <div class="map-point-detail-list-box">
-          <div class="map-point-detail-scroll">
-            <div class="map-point-detail-list">
-              ${selectedPoints.map(point => renderPointCard(point)).join('')}
-            </div>
+        <div class="map-point-detail-scroll">
+          <div class="map-point-detail-list">
+            ${selectedPoints.map(point => renderPointCard(point)).join('')}
           </div>
         </div>
       `;
