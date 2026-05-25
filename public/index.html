@@ -1442,6 +1442,167 @@
       min-width: 0;
       margin: 0;
     }
+    .poi-manager-box {
+      display: grid;
+      gap: 16px;
+      width: 100%;
+      justify-self: stretch;
+    }
+    .poi-manager-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .poi-manager-selection-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .poi-manager-layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .poi-manager-panel {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+    .poi-manager-panel.box {
+      padding: 16px;
+    }
+    .poi-manager-panel-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+    }
+    .poi-form-shell {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+    .poi-form-shell[aria-disabled="true"] {
+      opacity: 0.68;
+    }
+    .poi-form-disabled-note {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px dashed rgba(120, 113, 108, 0.22);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .poi-form-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .poi-meta-item {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(120, 113, 108, 0.12);
+      background: rgba(249, 250, 251, 0.92);
+      min-width: 0;
+    }
+    .poi-meta-label {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .poi-meta-value {
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .poi-form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .poi-list {
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .poi-list-empty {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px dashed rgba(120, 113, 108, 0.22);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .poi-list-item {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 113, 108, 0.12);
+      background: rgba(255, 255, 255, 0.96);
+      cursor: pointer;
+      transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+    }
+    .poi-list-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(194, 65, 12, 0.26);
+      box-shadow: 0 12px 26px rgba(120, 113, 108, 0.08);
+    }
+    .poi-list-item.active {
+      border-color: rgba(194, 65, 12, 0.42);
+      box-shadow: 0 14px 28px rgba(194, 65, 12, 0.12);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,247,237,0.94));
+    }
+    .poi-list-item-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .poi-list-item-main {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .poi-list-item-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .poi-list-item-subtitle,
+    .poi-list-item-description {
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--muted);
+      word-break: break-word;
+    }
+    .poi-list-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .poi-list-item-delete {
+      padding: 8px 10px;
+      min-height: 34px;
+    }
     @media (max-width: 1100px) {
       .grid-3, .split { grid-template-columns: 1fr; }
       .progress-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1456,6 +1617,7 @@
       .map-page-title-row { justify-content: flex-start; text-align: left; }
       .map-sidebar-title-row { align-items: flex-start; flex-direction: column; }
       .map-sidebar-head .box-status { white-space: normal; }
+      .poi-manager-layout { grid-template-columns: 1fr; }
     }
     @media (max-width: 720px) {
       .shell { padding: 14px; }
@@ -1486,6 +1648,12 @@
       }
       .map-layout { --map-stage-height: 360px; }
       .map-point-detail-grid { grid-template-columns: 1fr; }
+      .poi-form-meta { grid-template-columns: 1fr; }
+      .poi-form-actions { align-items: stretch; }
+      .poi-form-actions .btn,
+      .poi-manager-topbar .btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -1724,6 +1892,42 @@
           <div class="map-point-detail-empty">Seleziona un punto sulla mappa per vedere qui i suoi dettagli.<br>Tieni premuto Shift per usare la selezione box al volo.</div>
         </div>
       </div>
+      <div class="box poi-manager-box">
+        <div class="box-head">
+          <div class="box-head-main">
+            <h3>Gesione POI</h3>
+          </div>
+          <div class="inline-status box-status" id="clusterPoiStatus" aria-live="polite">Pronto</div>
+        </div>
+        <div class="poi-manager-topbar">
+          <div class="poi-manager-selection-note" id="clusterPoiSelectionNote">0 punti selezionati nel box precedente.</div>
+          <button class="btn primary" id="clusterPoiCreateBtn" type="button">Crea POI</button>
+        </div>
+        <div class="poi-manager-layout">
+          <div class="poi-manager-panel box">
+            <h4 class="poi-manager-panel-title" id="clusterPoiFormTitle">Inserimento POI</h4>
+            <div class="poi-form-shell" id="clusterPoiFormShell" aria-disabled="true">
+              <div class="poi-form-disabled-note" id="clusterPoiFormDisabledNote">Seleziona uno o piu punti e usa Crea POI, oppure clicca un POI a destra per modificarlo.</div>
+              <div class="field">
+                <label for="clusterPoiName">Nome</label>
+                <input id="clusterPoiName" type="text" placeholder="Es. POI centro storico">
+              </div>
+              <div class="field">
+                <label for="clusterPoiDescription">Descrizione</label>
+                <textarea id="clusterPoiDescription" placeholder="Descrivi il POI creato a partire dai punti selezionati."></textarea>
+              </div>
+              <div class="poi-form-meta" id="clusterPoiMeta"></div>
+              <div class="poi-form-actions">
+                <button class="btn primary" id="clusterPoiSubmitBtn" type="button">Inserisci</button>
+              </div>
+            </div>
+          </div>
+          <div class="poi-manager-panel box">
+            <h4 class="poi-manager-panel-title">POI creati</h4>
+            <div class="poi-list" id="clusterPoiList" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
   <div class="cluster-pie-tooltip" id="clusterPieTooltip" hidden></div>
@@ -1737,6 +1941,7 @@
       config: '/api/poi/config',
       configTestSql: '/api/poi/config/test-sql',
       executionSets: '/api/poi/execution-sets',
+      clusterPois: '/api/poi/cluster-pois',
       runs: '/api/poi/runs',
       runState: '/api/poi/run-state',
       runCancel: '/api/poi/run-state/cancel'
@@ -1935,6 +2140,10 @@
       config: null,
       executionSets: [],
       editingExecutionSetId: null,
+      clusterPois: [],
+      editingClusterPoiId: null,
+      clusterPoiMode: 'idle',
+      clusterPoiSaving: false,
       poiRuns: [],
       currentRunState: null,
       selectedResultRunId: null,
@@ -2006,6 +2215,17 @@
       resultsMap: document.getElementById('resultsMap'),
       runMapSelectionBox: document.getElementById('runMapSelectionBox'),
       resultsMapEmpty: document.getElementById('resultsMapEmpty'),
+      clusterPoiStatus: document.getElementById('clusterPoiStatus'),
+      clusterPoiSelectionNote: document.getElementById('clusterPoiSelectionNote'),
+      clusterPoiCreateBtn: document.getElementById('clusterPoiCreateBtn'),
+      clusterPoiFormTitle: document.getElementById('clusterPoiFormTitle'),
+      clusterPoiFormShell: document.getElementById('clusterPoiFormShell'),
+      clusterPoiFormDisabledNote: document.getElementById('clusterPoiFormDisabledNote'),
+      clusterPoiName: document.getElementById('clusterPoiName'),
+      clusterPoiDescription: document.getElementById('clusterPoiDescription'),
+      clusterPoiMeta: document.getElementById('clusterPoiMeta'),
+      clusterPoiSubmitBtn: document.getElementById('clusterPoiSubmitBtn'),
+      clusterPoiList: document.getElementById('clusterPoiList'),
       saveConfigBtn: document.getElementById('saveConfigBtn'),
       testSqlBtn: document.getElementById('testSqlBtn'),
       saveExecutionSetBtn: document.getElementById('saveExecutionSetBtn'),
@@ -2025,7 +2245,7 @@
     }
 
     function rememberOriginalLabels() {
-      for (const button of [els.saveConfigBtn, els.testSqlBtn, els.saveExecutionSetBtn, els.resetExecutionSetBtn]) {
+      for (const button of [els.saveConfigBtn, els.testSqlBtn, els.saveExecutionSetBtn, els.resetExecutionSetBtn, els.clusterPoiCreateBtn, els.clusterPoiSubmitBtn].filter(Boolean)) {
         button.dataset.originalLabel = button.textContent;
       }
     }
@@ -2804,7 +3024,7 @@
         });
       });
 
-      return selectedPoints;
+      return filterAvailableRunMapPoints(selectedPoints);
     }
 
     function getRunMapPointSelectionLabel(point = {}) {
@@ -2817,6 +3037,21 @@
 
     function getRunMapPointSelectionKindLabel(point = {}) {
       return point.selectedFromAggregate ? 'Punto multiplo' : 'Punto singolo';
+    }
+
+    function getRunMapPersistentPointKey(point = {}) {
+      const lat = Number(point.Latitudine);
+      const lon = Number(point.Longitudine);
+      const clusterId = point.selectedAggregateClusterId ?? point.aggregateClusterId ?? point.clusterId ?? '';
+      return [
+        String(point.sourceType || ''),
+        String(clusterId),
+        String(point.Id ?? ''),
+        String(point.IdDataentry ?? ''),
+        String(point.IdOcr ?? ''),
+        Number.isFinite(lat) ? lat.toFixed(6) : '',
+        Number.isFinite(lon) ? lon.toFixed(6) : ''
+      ].join('|');
     }
 
     function getRunMapPointSelectionKey(point = {}) {
@@ -2835,6 +3070,37 @@
 
     function getRunMapSelectedPoints() {
       return Array.isArray(state.runMapSelectedPoints) ? state.runMapSelectedPoints : [];
+    }
+
+    function getClusterPoiOccupiedPointKeys() {
+      const occupied = new Set();
+      (Array.isArray(state.clusterPois) ? state.clusterPois : []).forEach(item => {
+        (Array.isArray(item?.points) ? item.points : []).forEach(point => {
+          const key = getRunMapPersistentPointKey(point);
+          if (key) occupied.add(key);
+        });
+      });
+      return occupied;
+    }
+
+    function isRunMapPointAssignedToClusterPoi(point = {}) {
+      const key = getRunMapPersistentPointKey(point);
+      if (!key) return false;
+      return getClusterPoiOccupiedPointKeys().has(key);
+    }
+
+    function filterAvailableRunMapPoints(points = []) {
+      const occupiedKeys = getClusterPoiOccupiedPointKeys();
+      return (Array.isArray(points) ? points : []).filter(point => {
+        const key = getRunMapPersistentPointKey(point);
+        return !key || !occupiedKeys.has(key);
+      });
+    }
+
+    function pruneAssignedRunMapSelectedPoints() {
+      const occupiedKeys = getClusterPoiOccupiedPointKeys();
+      if (!occupiedKeys.size) return;
+      pruneRunMapSelectedPoints(point => occupiedKeys.has(getRunMapPersistentPointKey(point)));
     }
 
     function getRunMapSelectedPointByKey(key = '') {
@@ -2973,9 +3239,267 @@
       }
     }
 
+    function getClusterPoiEditingItem() {
+      return (Array.isArray(state.clusterPois) ? state.clusterPois : []).find(item => item.id === state.editingClusterPoiId) || null;
+    }
+
+    function getClusterPoiSelectedPointsSnapshot() {
+      return getRunMapSelectedPoints().map(point => ({
+        Id: point.Id ?? null,
+        IdDataentry: point.IdDataentry ?? null,
+        IdOcr: point.IdOcr ?? null,
+        Latitudine: Number.isFinite(Number(point.Latitudine)) ? Number(point.Latitudine) : null,
+        Longitudine: Number.isFinite(Number(point.Longitudine)) ? Number(point.Longitudine) : null,
+        Citta: point.Citta || '',
+        IndirizzoFormattato: point.IndirizzoFormattato || '',
+        DataInfrazione: point.DataInfrazione || '',
+        IdTipoInfrazione: point.IdTipoInfrazione ?? null,
+        sourceType: point.sourceType || '',
+        sourceLabel: point.sourceLabel || getRunMapPointSelectionLabel(point) || '',
+        selectedFromAggregate: Boolean(point.selectedFromAggregate),
+        selectedAggregateCount: point.selectedAggregateCount ?? null,
+        selectedAggregateClusterId: point.selectedAggregateClusterId ?? null
+      }));
+    }
+
+    function resetClusterPoiEditor(mode = 'idle') {
+      state.clusterPoiMode = mode;
+      state.editingClusterPoiId = null;
+      if (els.clusterPoiName) els.clusterPoiName.value = '';
+      if (els.clusterPoiDescription) els.clusterPoiDescription.value = '';
+      renderClusterPoiManager();
+    }
+
+    function startClusterPoiCreateMode() {
+      const selectedCount = getRunMapSelectedPoints().length;
+      if (!selectedCount) {
+        setInlineStatus(els.clusterPoiStatus, 'Seleziona almeno un punto prima di creare un POI', 'warn');
+        renderClusterPoiManager();
+        return;
+      }
+      state.clusterPoiMode = 'create';
+      state.editingClusterPoiId = null;
+      if (els.clusterPoiName) els.clusterPoiName.value = '';
+      if (els.clusterPoiDescription) els.clusterPoiDescription.value = '';
+      setInlineStatus(els.clusterPoiStatus, `Modalita inserimento attiva su ${formatCount(selectedCount)} punti`, 'ok');
+      renderClusterPoiManager();
+    }
+
+    function loadClusterPoiIntoEditor(id = '') {
+      const item = (Array.isArray(state.clusterPois) ? state.clusterPois : []).find(entry => entry.id === id);
+      if (!item) return;
+      state.clusterPoiMode = 'edit';
+      state.editingClusterPoiId = item.id;
+      if (els.clusterPoiName) els.clusterPoiName.value = item.name || '';
+      if (els.clusterPoiDescription) els.clusterPoiDescription.value = item.description || '';
+      setInlineStatus(els.clusterPoiStatus, `Modifica POI "${item.name}"`, 'ok');
+      renderClusterPoiManager();
+    }
+
+    function getClusterPoiWorkingPoints() {
+      if (state.clusterPoiMode === 'edit') {
+        const item = getClusterPoiEditingItem();
+        return Array.isArray(item?.points) ? item.points : [];
+      }
+      return getClusterPoiSelectedPointsSnapshot();
+    }
+
+    function renderClusterPoiMeta(points = [], item = null) {
+      if (!els.clusterPoiMeta) return;
+      const run = getSelectedRun();
+      const entries = item
+        ? [
+            ['Punti', `${formatCount(item.pointCount ?? points.length)} punti`],
+            ['Creato il', formatRunDateTime(item.createdAt) || 'n/d'],
+            ['Aggiornato il', formatRunDateTime(item.updatedAt) || 'n/d'],
+            ['Origine', item.runSetName || 'Selezione mappa']
+          ]
+        : [
+            ['Punti selezionati', `${formatCount(points.length)} punti`],
+            ['Run corrente', run?.setName || 'Nessun run attivo'],
+            ['Data creazione', new Date().toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' })],
+            ['Modalita', 'Inserimento']
+          ];
+
+      els.clusterPoiMeta.innerHTML = entries.map(([label, value]) => `
+        <div class="poi-meta-item">
+          <div class="poi-meta-label">${escapeHtml(label)}</div>
+          <div class="poi-meta-value">${escapeHtml(value)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderClusterPoiList() {
+      if (!els.clusterPoiList) return;
+      const pois = Array.isArray(state.clusterPois) ? state.clusterPois : [];
+      if (!pois.length) {
+        els.clusterPoiList.innerHTML = '<div class="poi-list-empty">Nessun POI creato. Seleziona dei punti sulla mappa e usa il box a sinistra per inserirne uno.</div>';
+        return;
+      }
+
+      els.clusterPoiList.innerHTML = pois.map(item => {
+        const active = state.editingClusterPoiId === item.id && state.clusterPoiMode === 'edit';
+        const subtitle = [
+          `${formatCount(item.pointCount ?? 0)} punti`,
+          formatRunDateTime(item.updatedAt || item.createdAt) || 'Data n/d'
+        ].filter(Boolean).join(' · ');
+        const description = String(item.description || '').trim();
+        const shortDescription = description.length > 160 ? `${description.slice(0, 160)}...` : description;
+
+        return `
+          <article class="poi-list-item ${active ? 'active' : ''}" data-cluster-poi-id="${escapeHtml(item.id)}" tabindex="0" role="button" aria-pressed="${active ? 'true' : 'false'}">
+            <div class="poi-list-item-top">
+              <div class="poi-list-item-main">
+                <div class="poi-list-item-title">${escapeHtml(item.name || 'POI senza nome')}</div>
+                <div class="poi-list-item-subtitle">${escapeHtml(subtitle)}</div>
+              </div>
+              <div class="poi-list-item-actions">
+                <button class="btn danger poi-list-item-delete" type="button" data-cluster-poi-delete="${escapeHtml(item.id)}">Elimina</button>
+              </div>
+            </div>
+            ${shortDescription ? `<div class="poi-list-item-description">${escapeHtml(shortDescription)}</div>` : ''}
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderClusterPoiManager() {
+      if (!els.clusterPoiSelectionNote) return;
+      const selectedPoints = getRunMapSelectedPoints();
+      const editingItem = getClusterPoiEditingItem();
+      if (state.clusterPoiMode === 'edit' && !editingItem) {
+        state.clusterPoiMode = 'idle';
+        state.editingClusterPoiId = null;
+      }
+
+      const isEdit = state.clusterPoiMode === 'edit' && Boolean(editingItem);
+      const isCreate = state.clusterPoiMode === 'create';
+      const workingPoints = isEdit
+        ? (Array.isArray(editingItem?.points) ? editingItem.points : [])
+        : getClusterPoiSelectedPointsSnapshot();
+      const formEnabled = isEdit || (isCreate && workingPoints.length > 0);
+      const submitLabel = isEdit ? 'Modifica' : 'Inserisci';
+      const title = isEdit ? 'Modifica POI' : 'Inserimento POI';
+
+      els.clusterPoiSelectionNote.textContent = `${formatCount(selectedPoints.length)} punti selezionati nel box precedente.`;
+      els.clusterPoiCreateBtn.disabled = state.clusterPoiSaving || selectedPoints.length === 0;
+      els.clusterPoiFormTitle.textContent = title;
+      els.clusterPoiFormShell.setAttribute('aria-disabled', formEnabled ? 'false' : 'true');
+      els.clusterPoiFormDisabledNote.hidden = formEnabled;
+      els.clusterPoiName.disabled = !formEnabled || state.clusterPoiSaving;
+      els.clusterPoiDescription.disabled = !formEnabled || state.clusterPoiSaving;
+      els.clusterPoiSubmitBtn.disabled = !formEnabled || state.clusterPoiSaving || workingPoints.length === 0;
+      els.clusterPoiSubmitBtn.innerHTML = state.clusterPoiSaving
+        ? `<span class="spinner"></span> ${isEdit ? 'Salvataggio...' : 'Inserimento...'}`
+        : escapeHtml(submitLabel);
+      els.clusterPoiSubmitBtn.dataset.originalLabel = submitLabel;
+
+      if (!formEnabled) {
+        els.clusterPoiName.value = '';
+        els.clusterPoiDescription.value = '';
+      }
+
+      renderClusterPoiMeta(workingPoints, editingItem || null);
+      renderClusterPoiList();
+    }
+
+    async function loadClusterPois() {
+      try {
+        const payload = await fetchJson(API.clusterPois);
+        state.clusterPois = Array.isArray(payload.pois) ? payload.pois : [];
+        pruneAssignedRunMapSelectedPoints();
+        renderClusterPoiManager();
+      } catch (err) {
+        setInlineStatus(els.clusterPoiStatus, 'Errore caricamento POI: ' + err.message, 'error');
+        if (els.clusterPoiList) {
+          els.clusterPoiList.innerHTML = `<div class="poi-list-empty">${escapeHtml(err.message)}</div>`;
+        }
+      }
+    }
+
+    async function submitClusterPoi() {
+      const isEdit = state.clusterPoiMode === 'edit';
+      const editingItem = getClusterPoiEditingItem();
+      if (isEdit && !editingItem) {
+        resetClusterPoiEditor('idle');
+        return;
+      }
+
+      const points = getClusterPoiWorkingPoints();
+      if (!points.length) {
+        setInlineStatus(els.clusterPoiStatus, 'Nessun punto disponibile per questo POI', 'warn');
+        renderClusterPoiManager();
+        return;
+      }
+
+      const name = els.clusterPoiName.value.trim();
+      const description = els.clusterPoiDescription.value.trim();
+      if (!name) {
+        setInlineStatus(els.clusterPoiStatus, 'Il nome del POI e obbligatorio', 'error');
+        els.clusterPoiName.focus();
+        return;
+      }
+
+      const run = getSelectedRun();
+      const payload = {
+        name,
+        description,
+        points,
+        runId: isEdit ? (editingItem?.runId || null) : (run?.id || null),
+        runSetId: isEdit ? (editingItem?.runSetId || null) : (run?.setId || null),
+        runSetName: isEdit ? (editingItem?.runSetName || '') : (run?.setName || '')
+      };
+
+      state.clusterPoiSaving = true;
+      renderClusterPoiManager();
+
+      try {
+        const response = await fetchJson(
+          isEdit ? `${API.clusterPois}/${encodeURIComponent(editingItem.id)}` : API.clusterPois,
+          {
+            method: isEdit ? 'PUT' : 'POST',
+            body: JSON.stringify(payload)
+          }
+        );
+        const saved = response.poi || null;
+        await loadClusterPois();
+        if (!isEdit) {
+          clearRunMapSelectedPoints();
+        }
+        if (saved?.id) {
+          loadClusterPoiIntoEditor(saved.id);
+        } else {
+          resetClusterPoiEditor('idle');
+        }
+        setInlineStatus(els.clusterPoiStatus, `POI ${isEdit ? 'aggiornato' : 'creato'} con successo`, 'ok');
+      } catch (err) {
+        setInlineStatus(els.clusterPoiStatus, `${isEdit ? 'Modifica' : 'Inserimento'} fallito: ${err.message}`, 'error');
+      } finally {
+        state.clusterPoiSaving = false;
+        renderClusterPoiManager();
+      }
+    }
+
+    async function deleteClusterPoi(id = '') {
+      const item = (Array.isArray(state.clusterPois) ? state.clusterPois : []).find(entry => entry.id === id);
+      if (!item) return;
+      if (!confirm(`Eliminare il POI "${item.name}"?`)) return;
+      try {
+        await fetchJson(`${API.clusterPois}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (state.editingClusterPoiId === id) {
+          resetClusterPoiEditor('idle');
+        }
+        await loadClusterPois();
+        setInlineStatus(els.clusterPoiStatus, `POI "${item.name}" eliminato`, 'ok');
+      } catch (err) {
+        setInlineStatus(els.clusterPoiStatus, 'Eliminazione POI fallita: ' + err.message, 'error');
+      }
+    }
+
     function setRunMapSelectedPoints(points = []) {
       state.runMapSelectedPoints = Array.isArray(points) ? points : [];
       renderRunMapPointDetail(state.runMapSelectedPoints);
+      renderClusterPoiManager();
       syncRunMapSelectionOverlay();
     }
 
@@ -4811,6 +5335,38 @@
         }
       });
     }
+    if (els.clusterPoiCreateBtn) {
+      els.clusterPoiCreateBtn.addEventListener('click', () => {
+        startClusterPoiCreateMode();
+      });
+    }
+    if (els.clusterPoiSubmitBtn) {
+      els.clusterPoiSubmitBtn.addEventListener('click', () => {
+        void submitClusterPoi();
+      });
+    }
+    if (els.clusterPoiList) {
+      els.clusterPoiList.addEventListener('click', event => {
+        const deleteButton = event.target.closest('[data-cluster-poi-delete]');
+        if (deleteButton) {
+          event.stopPropagation();
+          void deleteClusterPoi(deleteButton.dataset.clusterPoiDelete);
+          return;
+        }
+        const item = event.target.closest('[data-cluster-poi-id]');
+        if (item) {
+          loadClusterPoiIntoEditor(item.dataset.clusterPoiId);
+        }
+      });
+      els.clusterPoiList.addEventListener('keydown', event => {
+        if (event.target.closest('[data-cluster-poi-delete]')) return;
+        const item = event.target.closest('[data-cluster-poi-id]');
+        if (!item) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        loadClusterPoiIntoEditor(item.dataset.clusterPoiId);
+      });
+    }
     document.addEventListener('pointerdown', event => {
       if (els.mapSettings?.contains(event.target)) return;
       setMapSettingsMenuOpen(false);
@@ -4845,12 +5401,14 @@
     updateRunMapBoxSelectButton();
     syncMapSettingsMenu();
     setMapSettingsMenuOpen(false);
+    renderClusterPoiManager();
     switchPage(state.activePageId);
     renderRunState();
     renderRunResults();
     setRunResultsTab('detail');
     loadConfig();
     loadExecutionSets();
+    loadClusterPois();
     loadPoiRuns();
   </script>
 </body>

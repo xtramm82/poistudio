@@ -16,6 +16,7 @@ const POI_CONFIG_FILE = path.join(DATA_DIR, 'poi-config.json');
 const POI_RUNS_FILE = path.join(DATA_DIR, 'poi-runs.json');
 const POI_RUN_STATE_FILE = path.join(DATA_DIR, 'poi-run-state.json');
 const EXECUTION_SETS_FILE = path.join(DATA_DIR, 'execution-sets.json');
+const POI_CLUSTER_POIS_FILE = path.join(DATA_DIR, 'poi-cluster-pois.json');
 const POI_CLUSTER_DIR = path.join(DATA_DIR, 'poi-clusters');
 const SCHEDULE_LOG_FILE = path.join(DATA_DIR, 'schedule-log.json');
 const SCHEDULE_STATE_FILE = path.join(DATA_DIR, 'schedule-state.json');
@@ -52,6 +53,8 @@ function getPoiConfig() { return loadJson(POI_CONFIG_FILE, defaultPoiConfig()); 
 function setPoiConfig(cfg) { saveJson(POI_CONFIG_FILE, cfg); }
 function getPoiRuns() { return loadJson(POI_RUNS_FILE, []); }
 function setPoiRuns(runs) { saveJson(POI_RUNS_FILE, runs); }
+function getPoiClusterPois() { return loadJson(POI_CLUSTER_POIS_FILE, []); }
+function setPoiClusterPois(pois) { saveJson(POI_CLUSTER_POIS_FILE, pois); }
 function defaultPoiRunState() {
   return {
     running: false,
@@ -419,6 +422,43 @@ function normalizePoiPoint(row = {}) {
     IndirizzoFormattato: String(row.IndirizzoFormattato || ''),
     DataInfrazione: formatPoiDate(row.DataInfrazione),
     IdTipoInfrazione: row.IdTipoInfrazione == null ? null : Number(row.IdTipoInfrazione)
+  };
+}
+function normalizePoiClusterPoiPoint(row = {}) {
+  const point = normalizePoiPoint(row);
+  point.sourceType = String(row.sourceType || '').trim();
+  point.sourceLabel = String(row.sourceLabel || '').trim();
+  point.selectedFromAggregate = Boolean(row.selectedFromAggregate);
+  point.selectedAggregateCount = Number.isFinite(Number(row.selectedAggregateCount))
+    ? Number(row.selectedAggregateCount)
+    : null;
+  point.selectedAggregateClusterId = Number.isFinite(Number(row.selectedAggregateClusterId))
+    ? Number(row.selectedAggregateClusterId)
+    : null;
+  return point;
+}
+function normalizePoiClusterPoi(value = {}, existing = null) {
+  const raw = value && typeof value === 'object' ? value : {};
+  const name = String(raw.name || '').trim();
+  if (!name) throw new Error('Missing POI name');
+
+  const points = Array.isArray(raw.points)
+    ? raw.points.map(point => normalizePoiClusterPoiPoint(point))
+      .filter(point => Number.isFinite(point.Latitudine) && Number.isFinite(point.Longitudine))
+    : [];
+  if (!points.length) throw new Error('Missing selected points');
+
+  return {
+    id: existing?.id || String(raw.id || crypto.randomUUID()),
+    name,
+    description: String(raw.description || '').trim(),
+    points,
+    pointCount: points.length,
+    runId: String(raw.runId || existing?.runId || '').trim() || null,
+    runSetId: String(raw.runSetId || existing?.runSetId || '').trim() || null,
+    runSetName: String(raw.runSetName || existing?.runSetName || '').trim(),
+    createdAt: existing?.createdAt || raw.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 }
 function percentile(values = [], fraction = 0.5) {
@@ -1839,6 +1879,52 @@ app.delete('/api/poi/execution-sets/:id', (req, res) => {
   if (next.length === sets.length) return res.status(404).json({ ok: false, error: 'Set not found' });
 
   setExecutionSets(next);
+  res.json({ ok: true });
+});
+
+app.get('/api/poi/cluster-pois', (_req, res) => {
+  res.json({ ok: true, pois: getPoiClusterPois() });
+});
+
+app.post('/api/poi/cluster-pois', (req, res) => {
+  try {
+    const next = normalizePoiClusterPoi(req.body || {});
+    const pois = getPoiClusterPois();
+    pois.unshift(next);
+    setPoiClusterPois(pois);
+    res.json({ ok: true, poi: next });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.put('/api/poi/cluster-pois/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ ok: false, error: 'Missing POI id' });
+
+  const pois = getPoiClusterPois();
+  const idx = pois.findIndex(item => item.id === id);
+  if (idx < 0) return res.status(404).json({ ok: false, error: 'POI not found' });
+
+  try {
+    const updated = normalizePoiClusterPoi({ ...req.body, id }, pois[idx]);
+    const next = [updated, ...pois.filter(item => item.id !== id)];
+    setPoiClusterPois(next);
+    res.json({ ok: true, poi: updated });
+  } catch (err) {
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/api/poi/cluster-pois/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ ok: false, error: 'Missing POI id' });
+
+  const pois = getPoiClusterPois();
+  const next = pois.filter(item => item.id !== id);
+  if (next.length === pois.length) return res.status(404).json({ ok: false, error: 'POI not found' });
+
+  setPoiClusterPois(next);
   res.json({ ok: true });
 });
 
