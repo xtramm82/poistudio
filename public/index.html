@@ -3039,6 +3039,17 @@
       return point.selectedFromAggregate ? 'Punto multiplo' : 'Punto singolo';
     }
 
+    function getRunMapOverlayRadius(point = {}) {
+      const displayRadius = Number(point.selectionDisplayRadius);
+      if (Number.isFinite(displayRadius) && displayRadius > 0) return displayRadius;
+      const baseRadius = Number(point.selectionRadius);
+      if (Number.isFinite(baseRadius) && baseRadius > 0) return baseRadius;
+      if (point.selectedFromAggregate) {
+        return getRunMapClusterMarkerRadius(point.selectedAggregateCount || 0, point.sourceType || 'cluster');
+      }
+      return String(point.sourceType || '') === 'noise' ? 6 : 7.5;
+    }
+
     function getRunMapPersistentPointKey(point = {}) {
       const lat = Number(point.Latitudine);
       const lon = Number(point.Longitudine);
@@ -3083,14 +3094,26 @@
       return occupied;
     }
 
-    function isRunMapPointAssignedToClusterPoi(point = {}) {
-      const key = getRunMapPersistentPointKey(point);
-      if (!key) return false;
-      return getClusterPoiOccupiedPointKeys().has(key);
+    function getVisibleClusterPoiPoints() {
+      const run = getSelectedRun();
+      const currentRunId = String(run?.id || '').trim();
+      return (Array.isArray(state.clusterPois) ? state.clusterPois : [])
+        .filter(item => {
+          const itemRunId = String(item?.runId || '').trim();
+          if (!currentRunId) return true;
+          return !itemRunId || itemRunId === currentRunId;
+        })
+        .flatMap(item => Array.isArray(item?.points) ? item.points : [])
+        .map(point => ({
+          ...point,
+          selectionRadius: Number.isFinite(Number(point.selectionRadius)) ? Number(point.selectionRadius) : getRunMapOverlayRadius(point),
+          selectionDisplayRadius: getRunMapOverlayRadius(point)
+        }))
+        .filter(point => Number.isFinite(Number(point.Latitudine)) && Number.isFinite(Number(point.Longitudine)));
     }
 
     function filterAvailableRunMapPoints(points = []) {
-      const occupiedKeys = getClusterPoiOccupiedPointKeys();
+      const occupiedKeys = new Set(getVisibleClusterPoiPoints().map(point => getRunMapPersistentPointKey(point)).filter(Boolean));
       return (Array.isArray(points) ? points : []).filter(point => {
         const key = getRunMapPersistentPointKey(point);
         return !key || !occupiedKeys.has(key);
@@ -3098,7 +3121,7 @@
     }
 
     function pruneAssignedRunMapSelectedPoints() {
-      const occupiedKeys = getClusterPoiOccupiedPointKeys();
+      const occupiedKeys = new Set(getVisibleClusterPoiPoints().map(point => getRunMapPersistentPointKey(point)).filter(Boolean));
       if (!occupiedKeys.size) return;
       pruneRunMapSelectedPoints(point => occupiedKeys.has(getRunMapPersistentPointKey(point)));
     }
@@ -3258,7 +3281,9 @@
         sourceLabel: point.sourceLabel || getRunMapPointSelectionLabel(point) || '',
         selectedFromAggregate: Boolean(point.selectedFromAggregate),
         selectedAggregateCount: point.selectedAggregateCount ?? null,
-        selectedAggregateClusterId: point.selectedAggregateClusterId ?? null
+        selectedAggregateClusterId: point.selectedAggregateClusterId ?? null,
+        selectionRadius: Number.isFinite(Number(point.selectionRadius)) ? Number(point.selectionRadius) : null,
+        selectionDisplayRadius: Number.isFinite(Number(point.selectionDisplayRadius)) ? Number(point.selectionDisplayRadius) : null
       }));
     }
 
@@ -4087,9 +4112,55 @@
       }
     }
 
+    function ensureRunMapReservedOverlay() {
+      if (!isRunMapStyleReady()) {
+        state.runMapSelectionOverlayPending = true;
+        return;
+      }
+      state.runMapSelectionOverlayPending = false;
+      const sourceId = 'run-map-reserved-source';
+      const layerId = 'run-map-reserved-ring';
+      const data = buildRunMapSelectionGeoJson(getVisibleClusterPoiPoints());
+
+      if (state.runMap.getSource(sourceId)) {
+        state.runMap.getSource(sourceId).setData(data);
+      } else {
+        state.runMap.addSource(sourceId, {
+          type: 'geojson',
+          data
+        });
+      }
+
+      if (!state.runMap.getLayer(layerId)) {
+        state.runMap.addLayer({
+          id: layerId,
+          type: 'circle',
+          source: sourceId,
+          paint: {
+            'circle-color': 'rgba(255, 255, 255, 0)',
+            'circle-radius': ['coalesce', ['get', 'selectionDisplayRadius'], ['get', 'selectionRadius'], 7.5],
+            'circle-stroke-color': '#374151',
+            'circle-stroke-width': 2,
+            'circle-opacity': 1
+          }
+        });
+      } else {
+        state.runMap.setPaintProperty(layerId, 'circle-color', 'rgba(255, 255, 255, 0)');
+        state.runMap.setPaintProperty(layerId, 'circle-radius', ['coalesce', ['get', 'selectionDisplayRadius'], ['get', 'selectionRadius'], 7.5]);
+        state.runMap.setPaintProperty(layerId, 'circle-stroke-color', '#374151');
+        state.runMap.setPaintProperty(layerId, 'circle-stroke-width', 2);
+        state.runMap.setPaintProperty(layerId, 'circle-opacity', 1);
+      }
+
+      if (state.runMap.getLayer(layerId)) {
+        state.runMap.moveLayer(layerId);
+      }
+    }
+
     function syncRunMapSelectionOverlay() {
       if (!state.runMap) return;
       ensureRunMapSelectionOverlay();
+      ensureRunMapReservedOverlay();
     }
 
     function buildClusterBounds(cluster) {

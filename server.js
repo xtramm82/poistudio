@@ -435,6 +435,12 @@ function normalizePoiClusterPoiPoint(row = {}) {
   point.selectedAggregateClusterId = Number.isFinite(Number(row.selectedAggregateClusterId))
     ? Number(row.selectedAggregateClusterId)
     : null;
+  point.selectionRadius = Number.isFinite(Number(row.selectionRadius))
+    ? Number(row.selectionRadius)
+    : null;
+  point.selectionDisplayRadius = Number.isFinite(Number(row.selectionDisplayRadius))
+    ? Number(row.selectionDisplayRadius)
+    : null;
   return point;
 }
 function normalizePoiClusterPoi(value = {}, existing = null) {
