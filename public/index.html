@@ -3433,6 +3433,7 @@
         const payload = await fetchJson(API.clusterPois);
         state.clusterPois = Array.isArray(payload.pois) ? payload.pois : [];
         pruneAssignedRunMapSelectedPoints();
+        syncRunMapSelectionOverlay();
         renderClusterPoiManager();
       } catch (err) {
         setInlineStatus(els.clusterPoiStatus, 'Errore caricamento POI: ' + err.message, 'error');
