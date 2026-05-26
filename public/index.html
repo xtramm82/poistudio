@@ -29,13 +29,15 @@
       --radius: 22px;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
     body {
       font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
       color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      display: block;
       background:
         radial-gradient(circle at top left, rgba(194, 65, 12, 0.08), transparent 28%),
         radial-gradient(circle at 85% 10%, rgba(120, 113, 108, 0.08), transparent 24%),
@@ -60,6 +62,7 @@
       max-width: none;
       margin: 0 auto;
       min-height: 0;
+      overflow: hidden;
       padding: 24px;
       display: grid;
       gap: 18px;
@@ -860,6 +863,7 @@
     }
     .map-page-title-row .box-head-title {
       flex: 0 0 auto;
+      margin: 0;
     }
     .map-page-actions {
       display: flex;
@@ -878,8 +882,47 @@
       max-width: 100%;
       text-align: right;
     }
-    .map-layout {
+    .poi-page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+    }
+    .poi-page-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0;
+      min-width: 0;
+      flex: 1;
+      text-align: left;
+    }
+    .poi-page-title-row .box-head-title {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    .poi-page-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      min-width: 0;
+      margin-left: auto;
+    }
+    .poi-page-status {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.35;
+      min-width: 0;
+      max-width: 100%;
+      text-align: right;
+    }
+    #map-page {
       --map-stage-height: 560px;
+    }
+    .map-layout {
       display: grid;
       grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
       gap: 16px;
@@ -944,6 +987,142 @@
       pointer-events: none;
       backdrop-filter: blur(4px);
     }
+    .poi-page-layout {
+      --poi-map-height: 560px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+      gap: 16px;
+      align-items: stretch;
+      width: 100%;
+      justify-self: stretch;
+    }
+    .poi-page-map-stage {
+      position: relative;
+      height: var(--poi-map-height);
+      min-height: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(120, 113, 108, 0.16);
+      background:
+        radial-gradient(circle at top left, rgba(194, 65, 12, 0.12), transparent 26%),
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249, 250, 251, 0.94));
+    }
+    .poi-page-map {
+      width: 100%;
+      height: 100%;
+    }
+    .poi-page-sidebar {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      align-content: start;
+      height: 100%;
+    }
+    .poi-page-sidebar .box-head {
+      margin-bottom: 6px;
+    }
+    .poi-page-sidebar .box-head h3 {
+      margin: 0;
+    }
+    .poi-page-hint {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+      margin: -4px 0 0;
+    }
+    .poi-page-list {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      align-content: start;
+    }
+    .poi-page-item {
+      display: grid;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 24px rgba(120, 113, 108, 0.08);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .poi-page-item:hover {
+      transform: translateY(-1px);
+      border-color: rgba(194, 65, 12, 0.26);
+      box-shadow: 0 12px 28px rgba(120, 113, 108, 0.12);
+    }
+    .poi-page-item.selected {
+      border-color: rgba(194, 65, 12, 0.36);
+      background: rgba(255, 247, 237, 0.95);
+    }
+    .poi-page-item-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+    .poi-page-item-main {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
+    }
+    .poi-page-item-title {
+      font-size: 0.98rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .poi-page-item-description {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .poi-page-item-meta {
+      justify-self: end;
+      text-align: right;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-word;
+      min-width: 0;
+    }
+    .poi-page-item-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .poi-page-item-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text);
+      user-select: none;
+    }
+    .poi-page-item-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .poi-page-item-toggle .switch-track {
+      width: 52px;
+      height: 32px;
+    }
+    .poi-page-item-toggle .switch-thumb {
+      width: 26px;
+      height: 26px;
+    }
+    .poi-page-item-toggle .switch-input:checked + .switch-track .switch-thumb {
+      transform: translateX(20px);
+    }
     .map-point-detail {
       display: grid;
       gap: 12px;
@@ -952,14 +1131,9 @@
     }
     .map-point-detail-head {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
-      min-width: 0;
-    }
-    .map-point-detail-copy {
-      display: grid;
-      gap: 4px;
       min-width: 0;
     }
     .map-point-detail-title {
@@ -967,12 +1141,6 @@
       font-weight: 800;
       line-height: 1.25;
       color: var(--text);
-      word-break: break-word;
-    }
-    .map-point-detail-subtitle {
-      font-size: 0.84rem;
-      color: var(--muted);
-      line-height: 1.35;
       word-break: break-word;
     }
     .map-point-detail-actions {
@@ -1149,13 +1317,13 @@
       display: none !important;
     }
     .map-sidebar {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 12px;
       align-content: start;
       min-height: 0;
       height: var(--map-stage-height);
       overflow: hidden;
-      grid-template-rows: auto auto minmax(0, 1fr);
       width: 100%;
     }
     .map-sidebar-head {
@@ -1187,13 +1355,16 @@
       color: var(--muted);
     }
     .cluster-list {
+      flex: 1 1 auto;
       display: grid;
       gap: 10px;
       min-height: 0;
-      height: 100%;
       max-height: none;
       overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       padding-right: 4px;
+      margin-right: -4px;
     }
     .cluster-list-empty {
       padding: 16px;
@@ -1205,8 +1376,8 @@
     .cluster-item {
       display: grid;
       gap: 10px;
-      padding: 14px;
-      border-radius: 18px;
+      padding: 12px;
+      border-radius: 16px;
       border: 1px solid rgba(120, 113, 108, 0.14);
       background: white;
     }
@@ -1225,8 +1396,8 @@
     }
     .cluster-item-pie {
       position: relative;
-      width: 52px;
-      height: 52px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
       flex: 0 0 auto;
       border: 1px solid rgba(120, 113, 108, 0.14);
@@ -1237,7 +1408,7 @@
     .cluster-item-pie::after {
       content: "";
       position: absolute;
-      inset: 14px;
+      inset: 12px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.92);
       box-shadow: inset 0 0 0 1px rgba(120, 113, 108, 0.08);
@@ -1437,6 +1608,26 @@
       width: 100%;
       justify-self: stretch;
     }
+    .map-point-detail-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .map-point-detail-actions-center {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+    }
+    .map-point-detail-actions-right {
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .map-point-detail-box .box-head {
       margin-bottom: 0;
     }
@@ -1452,10 +1643,14 @@
       margin: 0;
     }
     .poi-manager-box {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 16px;
       width: 100%;
       justify-self: stretch;
+      min-height: calc(var(--map-stage-height) + 120px);
+      height: auto;
+      overflow: hidden;
     }
     .poi-manager-head {
       display: grid;
@@ -1482,12 +1677,17 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
-      align-items: start;
+      align-items: stretch;
+      min-height: 0;
+      flex: 1 1 auto;
     }
     .poi-manager-panel {
       display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
       gap: 14px;
       min-width: 0;
+      height: 100%;
+      min-height: 0;
     }
     .poi-manager-panel.box {
       padding: 16px;
@@ -1498,22 +1698,36 @@
       color: var(--text);
       margin: 0;
     }
+    .poi-manager-panel-subtitle {
+      margin: 4px 0 0;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .poi-manager-panel-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 12px;
+      min-width: 0;
+    }
     .poi-form-shell {
       display: grid;
       gap: 14px;
       min-width: 0;
+      min-height: 0;
+      height: auto;
     }
     .poi-form-shell[aria-disabled="true"] {
       opacity: 0.68;
     }
     .poi-form-disabled-note {
-      padding: 14px;
-      border-radius: 16px;
-      border: 1px dashed rgba(120, 113, 108, 0.22);
-      background: rgba(255, 255, 255, 0.72);
       color: var(--muted);
       font-size: 0.9rem;
       line-height: 1.5;
+      padding: 0;
+      border: 0;
+      background: transparent;
     }
     .poi-form-meta {
       display: grid;
@@ -1543,20 +1757,16 @@
       color: var(--text);
       word-break: break-word;
     }
-    .poi-form-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
     .poi-list {
       display: grid;
       gap: 10px;
       min-width: 0;
-      max-height: 520px;
+      min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
       padding-right: 4px;
+      margin-right: -4px;
     }
     .poi-list-empty {
       padding: 16px;
@@ -1628,11 +1838,15 @@
       .selector-card { width: 100%; }
       .content-box { width: 100%; }
       .map-layout { grid-template-columns: 1fr; }
-      .map-layout { --map-stage-height: 420px; }
-      .cluster-list { max-height: none; }
+      #map-page { --map-stage-height: 420px; }
+      .poi-page-layout { grid-template-columns: 1fr; }
+      .poi-page-layout { --poi-map-height: 420px; }
+      .cluster-list { max-height: none; overflow: visible; padding-right: 0; margin-right: 0; }
       .map-page-head { align-items: flex-start; flex-direction: column; }
       .map-page-title-row { justify-content: flex-start; text-align: left; }
       .map-page-actions { width: 100%; justify-content: space-between; }
+      .poi-page-head { align-items: flex-start; flex-direction: column; }
+      .poi-page-actions { width: 100%; justify-content: space-between; }
       .map-sidebar-title-row { align-items: flex-start; flex-direction: column; }
       .map-sidebar-head .box-status { white-space: normal; }
       .poi-manager-head {
@@ -1673,7 +1887,7 @@
       .run-log-actions {
         width: auto;
       }
-      .map-layout { --map-stage-height: 360px; }
+      #map-page { --map-stage-height: 360px; }
       .map-point-detail-grid { grid-template-columns: 1fr; }
       .poi-form-meta { grid-template-columns: 1fr; }
       .poi-form-actions { align-items: stretch; }
@@ -1693,6 +1907,7 @@
         <button data-page="prep-page">Preparazione</button>
         <button data-page="run-page">Esecuzione</button>
         <button data-page="map-page">Mappa</button>
+        <button data-page="poi-page">POI</button>
       </div>
     </section>
 
@@ -1910,9 +2125,18 @@
         </div>
       </div>
       <div class="box map-point-detail-box">
-        <div class="box-head">
-          <div class="box-head-main">
-            <h3>Dettagli selezionati</h3>
+        <div class="box-head map-point-detail-head">
+          <h3 class="map-point-detail-title">Dettagli selezionati</h3>
+          <div class="map-point-detail-actions-center">
+            <button class="btn primary" id="clusterPoiCreateBtn" type="button">Crea POI</button>
+          </div>
+          <div class="map-point-detail-actions-right" id="runMapPointDetailControls">
+            <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
+              <span class="switch-label">Selezione box</span>
+              <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
+            <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
           </div>
         </div>
         <div class="map-point-detail" id="runMapPointDetail" aria-live="polite">
@@ -1922,16 +2146,20 @@
       <div class="box poi-manager-box">
         <div class="box-head poi-manager-head">
           <div class="box-head-main">
-            <h3>Gesione POI</h3>
+            <h3>Gestione POI</h3>
           </div>
-          <button class="btn primary" id="clusterPoiCreateBtn" type="button">Crea POI</button>
           <div class="inline-status box-status" id="clusterPoiStatus" aria-live="polite">Pronto</div>
         </div>
         <div class="poi-manager-layout">
-          <div class="poi-manager-panel box">
-            <h4 class="poi-manager-panel-title" id="clusterPoiFormTitle">Inserimento POI</h4>
+        <div class="poi-manager-panel box">
+            <div class="poi-manager-panel-head">
+              <div>
+                <h4 class="poi-manager-panel-title" id="clusterPoiFormTitle">Inserimento POI</h4>
+                <div class="poi-manager-panel-subtitle" id="clusterPoiFormDisabledNote">Seleziona uno o piu punti e usa Crea POI, oppure clicca un POI a destra per modificarlo.</div>
+              </div>
+              <button class="btn primary" id="clusterPoiSubmitBtn" type="button">Inserisci</button>
+            </div>
             <div class="poi-form-shell" id="clusterPoiFormShell" aria-disabled="true">
-              <div class="poi-form-disabled-note" id="clusterPoiFormDisabledNote">Seleziona uno o piu punti e usa Crea POI, oppure clicca un POI a destra per modificarlo.</div>
               <div class="field">
                 <label for="clusterPoiName">Nome</label>
                 <input id="clusterPoiName" type="text" placeholder="Es. POI centro storico">
@@ -1941,15 +2169,92 @@
                 <textarea id="clusterPoiDescription" placeholder="Descrivi il POI creato a partire dai punti selezionati."></textarea>
               </div>
               <div class="poi-form-meta" id="clusterPoiMeta"></div>
-              <div class="poi-form-actions">
-                <button class="btn primary" id="clusterPoiSubmitBtn" type="button">Inserisci</button>
-              </div>
             </div>
           </div>
           <div class="poi-manager-panel box">
             <h4 class="poi-manager-panel-title">POI creati</h4>
             <div class="poi-list" id="clusterPoiList" aria-live="polite"></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="poi-page" class="page">
+      <div class="poi-page-head">
+        <div class="poi-page-title-row">
+          <h2 class="box-head-title" id="poiPageTitle">POI</h2>
+        </div>
+        <div class="poi-page-actions">
+          <div class="inline-status box-status poi-page-status" id="poiPageStatus" aria-live="polite">Seleziona uno o piu POI per mostrarli sulla mappa.</div>
+          <div class="map-settings" id="poiMapSettings">
+            <button class="btn ghost map-settings-btn" id="poiMapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="poiMapSettingsMenu">⚙</button>
+            <div class="map-settings-menu" id="poiMapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
+              <div class="map-settings-title">Layer vettoriali</div>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="poi">
+                <span>POI generici</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="transit_poi">
+                <span>Trasporti POI</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="airport_labels">
+                <span>Aeroporti</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="place_labels">
+                <span>Nomi luoghi</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="water_labels">
+                <span>Nomi acqua</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_names">
+                <span>Nomi strade</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="pedestrian_paths">
+                <span>Percorsi pedonali</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_shields">
+                <span>Cartelli stradali</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="road_direction">
+                <span>Direzione strade</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="transit_lines">
+                <span>Linee trasporto</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="boundary_lines">
+                <span>Confini</span>
+              </label>
+              <label class="map-setting-option">
+                <input type="checkbox" name="mapLayerToggle" value="housenumbers" disabled>
+                <span>Numeri civici</span>
+              </label>
+              <div class="map-settings-note">Il controllo agisce sui layer vettoriali disponibili nello style 2D corrente. I numeri civici non sono esposti dallo style corrente.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="poi-page-layout">
+        <div class="map-stage-main poi-page-map-stage">
+          <div class="poi-page-map" id="poiMap" aria-label="Mappa dei POI"></div>
+          <div class="map-empty" id="poiMapEmpty">Seleziona uno o piu POI a destra per visualizzarli sulla mappa.</div>
+        </div>
+        <div class="box content-box poi-page-sidebar">
+          <div class="box-head">
+            <h3>Elenco POI</h3>
+            <button class="btn primary" id="poiToggleAllBtn" type="button">Seleziona tutto</button>
+          </div>
+          <p class="poi-page-hint">La selezione della lista controlla i marker mostrati sulla mappa. Il pulsante in testa alterna selezione e deselezione di tutti i POI.</p>
+          <div class="poi-page-list" id="poiPageList" aria-live="polite"></div>
         </div>
       </div>
     </section>
@@ -1992,7 +2297,9 @@
 
     const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
     const MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.mapLayerGroups.v1';
+    const POI_MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.poiMapLayerGroups.v1';
     const ACTIVE_PAGE_STORAGE_KEY = 'poistudio.activePageId.v1';
+    const POI_SELECTION_STORAGE_KEY = 'poistudio.poiSelectedIds.v1';
 
     const MAP_LAYER_GROUPS = [
       {
@@ -2129,13 +2436,24 @@
       }
     }
 
+    function loadPersistedPoiMapVisibleLayerGroups() {
+      try {
+        if (typeof localStorage === 'undefined') return getDefaultMapVisibleLayerGroups();
+        const raw = localStorage.getItem(POI_MAP_LAYER_SETTINGS_STORAGE_KEY);
+        if (!raw) return getDefaultMapVisibleLayerGroups();
+        return normalizeMapVisibleLayerGroups(JSON.parse(raw));
+      } catch {
+        return getDefaultMapVisibleLayerGroups();
+      }
+    }
+
     function loadPersistedActivePageId() {
       const fallbackPageId = 'config-page';
       try {
         if (typeof localStorage === 'undefined') return fallbackPageId;
         const raw = localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY);
         const normalized = raw === 'execution-page' ? 'run-page' : raw;
-        const allowedPages = new Set(['config-page', 'prep-page', 'run-page', 'map-page']);
+        const allowedPages = new Set(['config-page', 'prep-page', 'run-page', 'map-page', 'poi-page']);
         return allowedPages.has(normalized) ? normalized : fallbackPageId;
       } catch {
         return fallbackPageId;
@@ -2151,6 +2469,15 @@
       }
     }
 
+    function persistPoiMapVisibleLayerGroups() {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(POI_MAP_LAYER_SETTINGS_STORAGE_KEY, JSON.stringify(state.poiMapVisibleLayerGroups));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
     function persistActivePageId(pageId) {
       try {
         if (typeof localStorage === 'undefined') return;
@@ -2160,11 +2487,40 @@
       }
     }
 
+    function loadPersistedPoiSelectionIds() {
+      try {
+        if (typeof localStorage === 'undefined') return [];
+        const raw = localStorage.getItem(POI_SELECTION_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.map(id => String(id)).filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function persistPoiSelectionIds(ids = []) {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        const uniqueIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map(id => String(id)).filter(Boolean)));
+        localStorage.setItem(POI_SELECTION_STORAGE_KEY, JSON.stringify(uniqueIds));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
+    const initialPoiSelectedIds = loadPersistedPoiSelectionIds();
+
     const state = {
       config: null,
       executionSets: [],
       editingExecutionSetId: null,
       clusterPois: [],
+      clusterPoisLoaded: false,
+      poiSelectedIds: initialPoiSelectedIds,
+      poiSelectionMode: initialPoiSelectedIds.length ? 'custom' : 'none',
+      poiMap: null,
+      poiMapPopup: null,
       editingClusterPoiId: null,
       clusterPoiMode: 'idle',
       clusterPoiSaving: false,
@@ -2197,6 +2553,7 @@
       clusterPieTooltip: null,
       clusterPieTooltipTarget: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
+      poiMapVisibleLayerGroups: loadPersistedPoiMapVisibleLayerGroups(),
       runMapClusterBounds: {},
       activePageId: loadPersistedActivePageId()
   };
@@ -2225,11 +2582,21 @@
       runResultsList: document.getElementById('runResultsList'),
       mapPageTitle: document.getElementById('mapPageTitle'),
       mapPageStatus: document.getElementById('mapPageStatus'),
+      poiPageTitle: document.getElementById('poiPageTitle'),
+      poiPageStatus: document.getElementById('poiPageStatus'),
+      poiToggleAllBtn: document.getElementById('poiToggleAllBtn'),
+      poiPageList: document.getElementById('poiPageList'),
+      poiMap: document.getElementById('poiMap'),
+      poiMapEmpty: document.getElementById('poiMapEmpty'),
       mapSettings: document.getElementById('mapSettings'),
       mapSettingsBtn: document.getElementById('mapSettingsBtn'),
       mapSettingsMenu: document.getElementById('mapSettingsMenu'),
+      poiMapSettings: document.getElementById('poiMapSettings'),
+      poiMapSettingsBtn: document.getElementById('poiMapSettingsBtn'),
+      poiMapSettingsMenu: document.getElementById('poiMapSettingsMenu'),
       runMapStatus: document.getElementById('runMapStatus'),
       runMapPointDetail: document.getElementById('runMapPointDetail'),
+      runMapPointDetailControls: document.getElementById('runMapPointDetailControls'),
       clusterBulkToggle: document.getElementById('clusterBulkToggle'),
       noisePointsToggle: document.getElementById('noisePointsToggle'),
       noisePointsCount: document.getElementById('noisePointsCount'),
@@ -2267,7 +2634,7 @@
     }
 
     function rememberOriginalLabels() {
-      for (const button of [els.saveConfigBtn, els.testSqlBtn, els.saveExecutionSetBtn, els.resetExecutionSetBtn, els.clusterPoiCreateBtn, els.clusterPoiSubmitBtn].filter(Boolean)) {
+      for (const button of [els.saveConfigBtn, els.testSqlBtn, els.saveExecutionSetBtn, els.resetExecutionSetBtn, els.clusterPoiCreateBtn, els.clusterPoiSubmitBtn, els.poiToggleAllBtn].filter(Boolean)) {
         button.dataset.originalLabel = button.textContent;
       }
     }
@@ -2544,6 +2911,17 @@
       return palette[index];
     }
 
+    function getPoiColor(poiId = '') {
+      const palette = ['#c2410c', '#0f766e', '#2563eb', '#be185d', '#4f46e5', '#15803d', '#7c3aed', '#0369a1', '#b45309', '#ea580c'];
+      const text = String(poiId || '');
+      let hash = 0;
+      for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+      }
+      const normalized = Math.abs(hash) % palette.length;
+      return palette[normalized];
+    }
+
     function getInfractionPieColor(value) {
       return INFRACTION_PIE_COLORS[Number(value)] || '#94a3b8';
     }
@@ -2733,15 +3111,15 @@
       throw new Error('MapLibre non caricato');
     }
 
-    function setMapSettingsMenuOpen(open) {
-      if (!els.mapSettingsMenu || !els.mapSettingsBtn) return;
-      els.mapSettingsMenu.hidden = !open;
-      els.mapSettingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    function setMapSettingsMenuOpen(open, menuEl = els.mapSettingsMenu, buttonEl = els.mapSettingsBtn) {
+      if (!menuEl || !buttonEl) return;
+      menuEl.hidden = !open;
+      buttonEl.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
     function syncMapSettingsMenu() {
-      if (!els.mapSettingsMenu) return;
-      syncMapLayerGroupMenu();
+      syncMapLayerGroupMenu(els.mapSettingsMenu);
+      syncMapLayerGroupMenu(els.poiMapSettingsMenu);
     }
 
     function getRunMapAggregatePointId(point = {}) {
@@ -2852,14 +3230,14 @@
       const features = Array.isArray(points)
         ? points
           .filter(point => Number.isFinite(Number(point.Latitudine)) && Number.isFinite(Number(point.Longitudine)))
-          .map(point => ({
+          .map((point, index) => ({
             type: 'Feature',
             geometry: {
               type: 'Point',
               coordinates: [Number(point.Longitudine), Number(point.Latitudine)]
             },
             properties: {
-              ...getProperties(point)
+              ...getProperties(point, index)
             }
           }))
         : [];
@@ -3251,20 +3629,6 @@
       };
 
       els.runMapPointDetail.innerHTML = `
-        <div class="map-point-detail-head">
-          <div class="map-point-detail-copy">
-            <div class="map-point-detail-title">${escapeHtml(selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`)}</div>
-            <div class="map-point-detail-subtitle">Clicca altri punti per aggiungerli o rimuoverli dalla selezione.</div>
-          </div>
-          <div class="map-point-detail-actions">
-            <label class="noise-toggle map-point-box-toggle" data-run-map-box-toggle="true" aria-label="Selezione box">
-              <span class="switch-label">Selezione box</span>
-              <input type="checkbox" class="switch-input" id="runMapBoxSelectToggle" ${state.runMapBoxSelectEnabled ? 'checked' : ''} aria-label="Selezione box">
-              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
-            </label>
-            <button class="btn ghost map-point-detail-clear" type="button" data-run-map-clear-selection>Svuota selezione</button>
-          </div>
-        </div>
         <div class="map-point-detail-scroll">
           <div class="map-point-detail-list">
             ${selectedPoints.map(point => renderPointCard(point)).join('')}
@@ -3286,6 +3650,296 @@
 
     function getClusterPoiEditingItem() {
       return (Array.isArray(state.clusterPois) ? state.clusterPois : []).find(item => item.id === state.editingClusterPoiId) || null;
+    }
+
+    function getPoiItems() {
+      return Array.isArray(state.clusterPois) ? state.clusterPois : [];
+    }
+
+    function getPoiItemById(id = '') {
+      return getPoiItems().find(item => String(item.id) === String(id)) || null;
+    }
+
+    function getPoiLoadedIds() {
+      return getPoiItems().map(item => String(item.id)).filter(Boolean);
+    }
+
+    function getPoiSelectedIdsSet() {
+      return new Set((Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).map(id => String(id)).filter(Boolean));
+    }
+
+    function updatePoiSelectionMode() {
+      const total = getPoiLoadedIds().length;
+      const selectedCount = (Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).length;
+      if (!selectedCount) {
+        state.poiSelectionMode = 'none';
+      } else if (total > 0 && selectedCount >= total) {
+        state.poiSelectionMode = 'all';
+      } else {
+        state.poiSelectionMode = 'custom';
+      }
+    }
+
+    function setPoiSelectedIds(ids = [], mode = '') {
+      const allowedIds = new Set(getPoiLoadedIds());
+      const uniqueIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map(id => String(id)).filter(id => allowedIds.has(id))));
+      state.poiSelectedIds = uniqueIds;
+      persistPoiSelectionIds(uniqueIds);
+      if (mode) {
+        state.poiSelectionMode = mode;
+      } else {
+        updatePoiSelectionMode();
+      }
+    }
+
+    function syncPoiSelectionToLoadedPois() {
+      const loadedIds = getPoiLoadedIds();
+      const currentIds = getPoiSelectedIdsSet();
+      if (state.poiSelectionMode === 'all') {
+        state.poiSelectedIds = loadedIds;
+        persistPoiSelectionIds(loadedIds);
+        return;
+      }
+      if (state.poiSelectionMode === 'none') {
+        state.poiSelectedIds = [];
+        persistPoiSelectionIds([]);
+        return;
+      }
+      state.poiSelectedIds = loadedIds.filter(id => currentIds.has(id));
+      persistPoiSelectionIds(state.poiSelectedIds);
+      updatePoiSelectionMode();
+    }
+
+    function setPoiSelectionMode(mode) {
+      const loadedIds = getPoiLoadedIds();
+      if (mode === 'all') {
+        setPoiSelectedIds(loadedIds, 'all');
+      } else if (mode === 'none') {
+        setPoiSelectedIds([], 'none');
+      } else {
+        updatePoiSelectionMode();
+      }
+      renderPoiPage();
+    }
+
+    function togglePoiSelection(id = '', selected = null) {
+      const current = getPoiSelectedIdsSet();
+      const poiId = String(id);
+      const shouldSelect = selected == null ? !current.has(poiId) : Boolean(selected);
+      if (shouldSelect) current.add(poiId);
+      else current.delete(poiId);
+      setPoiSelectedIds(Array.from(current));
+      renderPoiPage();
+    }
+
+    function getVisiblePoiFeatures() {
+      const selectedIds = getPoiSelectedIdsSet();
+      return getPoiItems()
+        .filter(item => selectedIds.has(String(item.id)))
+        .flatMap((item, poiIndex) => {
+          const points = Array.isArray(item.points) ? item.points : [];
+          const color = getPoiColor(item.id);
+          return buildPointsGeoJson(points, (point, pointIndex) => ({
+            ...point,
+            poiId: String(item.id || ''),
+            poiName: String(item.name || 'POI senza nome'),
+            poiDescription: String(item.description || ''),
+            poiColor: color,
+            poiIndex,
+            poiPointIndex: pointIndex,
+            poiPointCount: Number(item.pointCount ?? points.length) || points.length,
+            poiLabel: pointIndex === 0 ? String(item.name || 'POI senza nome') : ''
+          })).features;
+        });
+    }
+
+    function getPoiMapBounds(features = []) {
+      const bounds = new window.maplibregl.LngLatBounds();
+      let hasBounds = false;
+      (Array.isArray(features) ? features : []).forEach(feature => {
+        const coords = Array.isArray(feature?.geometry?.coordinates) ? feature.geometry.coordinates : [];
+        const lon = Number(coords[0]);
+        const lat = Number(coords[1]);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+        bounds.extend([lon, lat]);
+        hasBounds = true;
+      });
+      return hasBounds ? bounds : null;
+    }
+
+    function updatePoiPageHeader() {
+      const total = getPoiItems().length;
+      const selected = (Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).length;
+      if (els.poiPageStatus) {
+        setInlineStatus(
+          els.poiPageStatus,
+          total
+            ? `${formatCount(selected)} selezionati su ${formatCount(total)} POI`
+            : 'Nessun POI disponibile',
+          total ? (selected ? 'ok' : 'warn') : ''
+        );
+      }
+      if (els.poiToggleAllBtn) {
+        els.poiToggleAllBtn.disabled = total === 0;
+        const allSelected = total > 0 && selected === total;
+        els.poiToggleAllBtn.textContent = allSelected ? 'Deseleziona tutto' : 'Seleziona tutto';
+      }
+    }
+
+    function renderPoiPageList() {
+      if (!els.poiPageList) return;
+      const pois = getPoiItems();
+      const selectedIds = getPoiSelectedIdsSet();
+      if (!pois.length) {
+        els.poiPageList.innerHTML = '<div class="poi-list-empty">Nessun POI disponibile.</div>';
+        return;
+      }
+
+      els.poiPageList.innerHTML = pois.map(item => {
+        const selected = selectedIds.has(String(item.id));
+        const pointCount = Number(item.pointCount ?? (Array.isArray(item.points) ? item.points.length : 0)) || 0;
+        const color = getPoiColor(item.id);
+        const metaParts = [
+          `${formatCount(pointCount)} punti`,
+          formatRunDateTime(item.updatedAt || item.createdAt) || 'Data n/d'
+        ].filter(Boolean);
+        const description = String(item.description || '').trim();
+        const shortDescription = description.length > 160 ? `${description.slice(0, 160)}...` : description;
+        return `
+          <article class="poi-page-item ${selected ? 'selected' : ''}" data-poi-id="${escapeHtml(item.id)}" tabindex="0" role="button" aria-pressed="${selected ? 'true' : 'false'}">
+            <div class="poi-page-item-top">
+              <div class="poi-page-item-main">
+                <div class="poi-page-item-title" style="color:${escapeHtml(color)}">${escapeHtml(item.name || 'POI senza nome')}</div>
+                ${shortDescription ? `<div class="poi-page-item-description">${escapeHtml(shortDescription)}</div>` : ''}
+              </div>
+              <div class="poi-page-item-actions">
+                <label class="poi-page-item-toggle" aria-label="Seleziona POI">
+                  <input type="checkbox" class="switch-input" data-poi-toggle="${escapeHtml(item.id)}" ${selected ? 'checked' : ''} aria-label="Seleziona POI">
+                  <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                </label>
+              </div>
+            </div>
+            <div class="poi-page-item-meta">${escapeHtml(metaParts.join(' · '))}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderPoiMapSource() {
+      if (!state.poiMap) return;
+      const features = getVisiblePoiFeatures();
+      const source = state.poiMap.getSource('poi-page-source');
+      const data = {
+        type: 'FeatureCollection',
+        features
+      };
+      if (source && typeof source.setData === 'function') {
+        source.setData(data);
+      }
+      if (els.poiMapEmpty) {
+        const shouldHide = features.length > 0;
+        els.poiMapEmpty.hidden = shouldHide;
+        els.poiMapEmpty.style.display = shouldHide ? 'none' : '';
+        els.poiMapEmpty.setAttribute('aria-hidden', shouldHide ? 'true' : 'false');
+      }
+      if (features.length === 1) {
+        const coords = features[0]?.geometry?.coordinates || [];
+        const lon = Number(coords[0]);
+        const lat = Number(coords[1]);
+        if (Number.isFinite(lon) && Number.isFinite(lat)) {
+          state.poiMap.easeTo({ center: [lon, lat], zoom: 13, duration: 0 });
+        }
+      } else {
+        const bounds = getPoiMapBounds(features);
+        if (bounds) {
+          state.poiMap.fitBounds(bounds, { padding: 56, duration: 0 });
+        }
+      }
+    }
+
+    async function ensurePoiMapReady() {
+      const maplibre = getMaplibre();
+      if (!maplibre) throw new Error('Impossibile caricare MapLibre');
+      if (!state.poiMap) {
+        state.poiMap = new maplibre.Map({
+          container: els.poiMap,
+          style: MAP_STYLE_URL,
+          center: [12.4964, 41.9028],
+          zoom: 5
+        });
+        state.poiMap.addControl(new maplibre.NavigationControl(), 'top-right');
+        state.poiMap.on('load', () => {
+          if (!state.poiMap.getSource('poi-page-source')) {
+            state.poiMap.addSource('poi-page-source', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-circles')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-circles',
+              type: 'circle',
+              source: 'poi-page-source',
+              paint: {
+                'circle-color': ['coalesce', ['get', 'poiColor'], '#c2410c'],
+                'circle-radius': 7.5,
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.82
+              }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-labels')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-labels',
+              type: 'symbol',
+              source: 'poi-page-source',
+              filter: ['!=', ['get', 'poiLabel'], ''],
+              layout: {
+                'text-field': ['get', 'poiLabel'],
+                'text-size': 12,
+                'text-offset': [0, 1.25],
+                'text-anchor': 'top',
+                'text-allow-overlap': false
+              },
+              paint: {
+                'text-color': ['coalesce', ['get', 'poiColor'], '#1f2937'],
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1.2
+              }
+            });
+          }
+          ['poi-page-circles', 'poi-page-labels'].forEach(layerId => {
+            state.poiMap.on('click', layerId, event => {
+              const feature = event.features && event.features[0];
+              const poiId = feature?.properties?.poiId;
+              if (!poiId) return;
+              togglePoiSelection(poiId);
+            });
+            state.poiMap.on('mouseenter', layerId, () => {
+              if (state.poiMap?.getCanvas) state.poiMap.getCanvas().style.cursor = 'pointer';
+            });
+            state.poiMap.on('mouseleave', layerId, () => {
+              if (state.poiMap?.getCanvas) state.poiMap.getCanvas().style.cursor = '';
+            });
+          });
+          applyAllPoiMapLayerVisibilities();
+          renderPoiMapSource();
+        });
+      }
+      requestAnimationFrame(() => {
+        if (state.poiMap) state.poiMap.resize();
+      });
+    }
+
+    async function renderPoiPage() {
+      if (state.clusterPoisLoaded) {
+        syncPoiSelectionToLoadedPois();
+      }
+      updatePoiPageHeader();
+      renderPoiPageList();
+      await ensurePoiMapReady();
+      renderPoiMapSource();
     }
 
     function getClusterPoiSelectedPointsSnapshot() {
@@ -3330,6 +3984,20 @@
       if (els.clusterPoiDescription) els.clusterPoiDescription.value = '';
       setInlineStatus(els.clusterPoiStatus, `Modalita inserimento attiva su ${formatCount(selectedCount)} punti`, 'ok');
       renderClusterPoiManager();
+      window.requestAnimationFrame(() => {
+        const formPanel = els.clusterPoiFormShell?.closest('.poi-manager-panel') || els.clusterPoiName?.closest('.poi-manager-panel');
+        if (formPanel && typeof formPanel.scrollIntoView === 'function') {
+          formPanel.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        }
+        window.requestAnimationFrame(() => {
+          if (!els.clusterPoiName || els.clusterPoiName.disabled) return;
+          try {
+            els.clusterPoiName.focus({ preventScroll: true });
+          } catch {
+            els.clusterPoiName.focus();
+          }
+        });
+      });
     }
 
     function loadClusterPoiIntoEditor(id = '') {
@@ -3428,15 +4096,25 @@
       const submitLabel = isEdit ? 'Modifica' : 'Inserisci';
       const title = isEdit ? 'Modifica POI' : 'Inserimento POI';
       const selectedCountLabel = selectedPoints.length === 1 ? '1 punto selezionato' : `${formatCount(selectedPoints.length)} punti selezionati`;
+      const hasSelectedPoints = selectedPoints.length > 0;
 
       els.clusterPoiCreateBtn.textContent = `Crea POI per ${selectedCountLabel}`;
-      els.clusterPoiCreateBtn.disabled = state.clusterPoiSaving || selectedPoints.length === 0;
+      els.clusterPoiCreateBtn.hidden = !hasSelectedPoints;
+      els.clusterPoiCreateBtn.disabled = state.clusterPoiSaving || !hasSelectedPoints;
+      els.clusterPoiCreateBtn.setAttribute('aria-hidden', hasSelectedPoints ? 'false' : 'true');
+      els.clusterPoiCreateBtn.tabIndex = hasSelectedPoints ? 0 : -1;
+      if (els.runMapPointDetailControls) {
+        els.runMapPointDetailControls.hidden = !hasSelectedPoints;
+      }
       els.clusterPoiFormTitle.textContent = title;
       els.clusterPoiFormShell.setAttribute('aria-disabled', formEnabled ? 'false' : 'true');
       els.clusterPoiFormDisabledNote.hidden = formEnabled;
       els.clusterPoiName.disabled = !formEnabled || state.clusterPoiSaving;
       els.clusterPoiDescription.disabled = !formEnabled || state.clusterPoiSaving;
+      els.clusterPoiSubmitBtn.hidden = !formEnabled;
       els.clusterPoiSubmitBtn.disabled = !formEnabled || state.clusterPoiSaving || workingPoints.length === 0;
+      els.clusterPoiSubmitBtn.setAttribute('aria-hidden', formEnabled ? 'false' : 'true');
+      els.clusterPoiSubmitBtn.tabIndex = formEnabled ? 0 : -1;
       els.clusterPoiSubmitBtn.innerHTML = state.clusterPoiSaving
         ? `<span class="spinner"></span> ${isEdit ? 'Salvataggio...' : 'Inserimento...'}`
         : escapeHtml(submitLabel);
@@ -3455,9 +4133,18 @@
       try {
         const payload = await fetchJson(API.clusterPois);
         state.clusterPois = Array.isArray(payload.pois) ? payload.pois : [];
+        state.clusterPoisLoaded = true;
+        const persistedPoiSelectedIds = loadPersistedPoiSelectionIds();
+        state.poiSelectedIds = persistedPoiSelectedIds;
+        updatePoiSelectionMode();
+        syncPoiSelectionToLoadedPois();
         pruneAssignedRunMapSelectedPoints();
         syncRunMapSelectionOverlay();
         renderClusterPoiManager();
+        updatePoiPageHeader();
+        if (state.activePageId === 'poi-page') {
+          await renderPoiPage();
+        }
       } catch (err) {
         setInlineStatus(els.clusterPoiStatus, 'Errore caricamento POI: ' + err.message, 'error');
         if (els.clusterPoiList) {
@@ -4208,25 +4895,33 @@
       ];
     }
 
-    function applyMapLayerGroupVisibility(groupId, visible) {
-      if (!Object.prototype.hasOwnProperty.call(state.runMapVisibleLayerGroups, groupId)) return;
-      state.runMapVisibleLayerGroups[groupId] = Boolean(visible);
-      persistMapVisibleLayerGroups();
-      if (!state.runMap) return;
+    function applyMapLayerGroupVisibilityToMap(map, visibleGroups, persistFn, groupId, visible) {
+      if (!Object.prototype.hasOwnProperty.call(visibleGroups, groupId)) return;
+      visibleGroups[groupId] = Boolean(visible);
+      persistFn();
+      if (!map) return;
       const group = MAP_LAYER_GROUPS.find(item => item.id === groupId);
       if (!group) return;
       group.layerIds.forEach(layerId => {
-        if (state.runMap.getLayer(layerId)) {
-          state.runMap.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
         }
       });
     }
 
-    function syncMapLayerGroupMenu() {
-      if (!els.mapSettingsMenu) return;
-      els.mapSettingsMenu.querySelectorAll('input[name="mapLayerToggle"]').forEach(input => {
+    function applyMapLayerGroupVisibility(groupId, visible) {
+      applyMapLayerGroupVisibilityToMap(state.runMap, state.runMapVisibleLayerGroups, persistMapVisibleLayerGroups, groupId, visible);
+    }
+
+    function applyPoiMapLayerGroupVisibility(groupId, visible) {
+      applyMapLayerGroupVisibilityToMap(state.poiMap, state.poiMapVisibleLayerGroups, persistPoiMapVisibleLayerGroups, groupId, visible);
+    }
+
+    function syncMapLayerGroupMenu(menuEl = els.mapSettingsMenu, visibleGroups = state.runMapVisibleLayerGroups) {
+      if (!menuEl) return;
+      menuEl.querySelectorAll('input[name="mapLayerToggle"]').forEach(input => {
         const group = MAP_LAYER_GROUPS.find(item => item.id === input.value);
-        input.checked = Boolean(state.runMapVisibleLayerGroups[input.value]);
+        input.checked = Boolean(visibleGroups[input.value]);
         input.disabled = group?.supported === false;
       });
     }
@@ -4235,7 +4930,15 @@
       MAP_LAYER_GROUPS.forEach(group => {
         applyMapLayerGroupVisibility(group.id, state.runMapVisibleLayerGroups[group.id]);
       });
-      syncMapLayerGroupMenu();
+      syncMapLayerGroupMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
+      syncMapLayerGroupMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
+    }
+
+    function applyAllPoiMapLayerVisibilities() {
+      MAP_LAYER_GROUPS.forEach(group => {
+        applyPoiMapLayerGroupVisibility(group.id, state.poiMapVisibleLayerGroups[group.id]);
+      });
+      syncMapLayerGroupMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
     }
 
     function ensureClusterLayerOnMap(clusterId, cluster) {
@@ -4594,8 +5297,13 @@
         </div>
       `).join('');
       syncRunMapListSelection();
+      els.runMapClusters.querySelectorAll('input[data-cluster-id]').forEach(input => {
+        input.addEventListener('change', () => {
+          void toggleClusterOnMap(input.dataset.clusterId, input.checked).catch(() => {});
+        });
+      });
       scheduleRunMapNoiseSelectionRefresh(noiseCount);
-      syncMapSettingsMenu();
+      syncMapSettingsMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
       syncRunMapBulkToggle();
     }
 
@@ -4944,7 +5652,7 @@
     function renderMapPage(run = null) {
       const resolvedRun = run || getSelectedRun();
       renderRunMapSidebar(resolvedRun);
-      syncMapSettingsMenu();
+      syncMapSettingsMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
       void ensureRunMapReady();
     }
 
@@ -5040,6 +5748,8 @@
         renderRunState();
         if (state.activePageId === 'map-page') {
           renderMapPage();
+        } else if (state.activePageId === 'poi-page') {
+          renderPoiPage();
         } else {
           renderRunResults();
         }
@@ -5273,6 +5983,10 @@
       });
       if (pageId === 'map-page') {
         renderMapPage();
+      } else if (pageId === 'run-page') {
+        renderRunResults();
+      } else if (pageId === 'poi-page') {
+        renderPoiPage();
       }
     }
 
@@ -5347,8 +6061,17 @@
     if (els.mapSettingsBtn) {
       els.mapSettingsBtn.addEventListener('click', event => {
         event.stopPropagation();
+        setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
         const shouldOpen = Boolean(els.mapSettingsMenu?.hidden);
         setMapSettingsMenuOpen(shouldOpen);
+      });
+    }
+    if (els.poiMapSettingsBtn) {
+      els.poiMapSettingsBtn.addEventListener('click', event => {
+        event.stopPropagation();
+        setMapSettingsMenuOpen(false);
+        const shouldOpen = Boolean(els.poiMapSettingsMenu?.hidden);
+        setMapSettingsMenuOpen(shouldOpen, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
       });
     }
     if (els.mapSettingsMenu) {
@@ -5359,16 +6082,24 @@
         const layerInput = event.target.closest('input[name="mapLayerToggle"]');
         if (layerInput) {
           applyMapLayerGroupVisibility(layerInput.value, layerInput.checked);
-          syncMapLayerGroupMenu();
+          syncMapSettingsMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
           setMapSettingsMenuOpen(false);
         }
       });
     }
-    els.runMapClusters.addEventListener('change', event => {
-      const input = event.target.closest('input[data-cluster-id]');
-      if (!input) return;
-      void toggleClusterOnMap(input.dataset.clusterId, input.checked);
-    });
+    if (els.poiMapSettingsMenu) {
+      els.poiMapSettingsMenu.addEventListener('click', event => {
+        event.stopPropagation();
+      });
+      els.poiMapSettingsMenu.addEventListener('change', event => {
+        const layerInput = event.target.closest('input[name="mapLayerToggle"]');
+        if (layerInput) {
+          applyPoiMapLayerGroupVisibility(layerInput.value, layerInput.checked);
+          syncMapSettingsMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
+          setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
+        }
+      });
+    }
     if (els.clusterBulkToggle) {
       els.clusterBulkToggle.addEventListener('click', () => {
         const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
@@ -5384,14 +6115,21 @@
         void toggleNoisePointsOnMap(event.target.checked);
       });
     }
-    if (els.runMapPointDetail) {
-      els.runMapPointDetail.addEventListener('change', event => {
+    if (els.runMapPointDetailControls) {
+      els.runMapPointDetailControls.addEventListener('change', event => {
         const toggle = event.target.closest('[data-run-map-box-toggle] .switch-input');
         if (toggle) {
           setRunMapBoxSelectEnabled(toggle.checked);
-          return;
         }
       });
+      els.runMapPointDetailControls.addEventListener('click', event => {
+        const clearButton = event.target.closest('[data-run-map-clear-selection]');
+        if (clearButton) {
+          clearRunMapSelectedPoints();
+        }
+      });
+    }
+    if (els.runMapPointDetail) {
       els.runMapPointDetail.addEventListener('click', event => {
         const toggleHeader = event.target.closest('[data-run-map-point-toggle]');
         if (toggleHeader && !event.target.closest('button, a, input, label, select, textarea')) {
@@ -5403,12 +6141,7 @@
         }
       });
       els.runMapPointDetail.addEventListener('click', event => {
-        const clearButton = event.target.closest('[data-run-map-clear-selection]');
         const removeButton = event.target.closest('[data-run-map-point-remove]');
-        if (clearButton) {
-          clearRunMapSelectedPoints();
-          return;
-        }
         if (removeButton) {
           pruneRunMapSelectedPoints(point => getRunMapPointSelectionKey(point) === removeButton.dataset.runMapPointRemove);
         }
@@ -5456,16 +6189,55 @@
         loadClusterPoiIntoEditor(item.dataset.clusterPoiId);
       });
     }
+    if (els.poiToggleAllBtn) {
+      els.poiToggleAllBtn.addEventListener('click', () => {
+        const total = getPoiLoadedIds().length;
+        const selected = (Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).length;
+        if (total > 0 && selected === total) {
+          setPoiSelectionMode('none');
+        } else {
+          setPoiSelectionMode('all');
+        }
+      });
+    }
+    if (els.poiPageList) {
+      els.poiPageList.addEventListener('click', event => {
+        const item = event.target.closest('[data-poi-id]');
+        if (!item) return;
+        if (event.target.closest('input, label, button, a, select, textarea')) return;
+        togglePoiSelection(item.dataset.poiId);
+      });
+      els.poiPageList.addEventListener('change', event => {
+        const toggle = event.target.closest('[data-poi-toggle]');
+        if (!toggle) return;
+        togglePoiSelection(toggle.dataset.poiToggle, toggle.checked);
+      });
+      els.poiPageList.addEventListener('keydown', event => {
+        const item = event.target.closest('[data-poi-id]');
+        if (!item) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        togglePoiSelection(item.dataset.poiId);
+      });
+    }
     document.addEventListener('pointerdown', event => {
       if (els.mapSettings?.contains(event.target)) return;
+      if (els.poiMapSettings?.contains(event.target)) return;
       setMapSettingsMenuOpen(false);
+      setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
     }, true);
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') setMapSettingsMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMapSettingsMenuOpen(false);
+        setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
+      }
     });
     document.addEventListener('click', event => {
       if (!els.mapSettings?.contains(event.target)) {
         setMapSettingsMenuOpen(false);
+      }
+      if (!els.poiMapSettings?.contains(event.target)) {
+        setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
       }
     });
 
@@ -5488,8 +6260,10 @@
     populateInfractionOptions();
     resetExecutionSetForm();
     updateRunMapBoxSelectButton();
-    syncMapSettingsMenu();
+    syncMapSettingsMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
+    syncMapSettingsMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
     setMapSettingsMenuOpen(false);
+    setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
     renderClusterPoiManager();
     switchPage(state.activePageId);
     renderRunState();
