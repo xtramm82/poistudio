@@ -327,6 +327,19 @@
       transform: rotate(180deg);
       color: var(--accent);
     }
+    .cluster-noise .cluster-item-top.interactive {
+      cursor: pointer;
+    }
+    .cluster-noise .cluster-item-top.interactive[aria-expanded="true"] .collapse-indicator {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+    .cluster-noise#noisePointsBox {
+      margin-right: 15px;
+    }
+    .cluster-noise-actions {
+      align-items: center;
+    }
     .box h2 {
       margin: 0;
       font-size: 1.02rem;
@@ -909,6 +922,7 @@
       gap: 12px;
       min-width: 0;
       margin-left: auto;
+      flex-wrap: wrap;
     }
     .poi-page-status {
       color: var(--muted);
@@ -996,6 +1010,9 @@
       width: 100%;
       justify-self: stretch;
     }
+    .poi-page-layout.is-wide {
+      grid-template-columns: minmax(0, 1fr);
+    }
     .poi-page-map-stage {
       position: relative;
       height: var(--poi-map-height);
@@ -1017,6 +1034,31 @@
       min-width: 0;
       align-content: start;
       height: 100%;
+    }
+    .poi-page-layout.is-wide .poi-page-sidebar {
+      height: auto;
+    }
+    .poi-page-sidebar .cluster-bulk-toggle-toggle {
+      margin-right: 15px;
+    }
+    .poi-page-layout-toggle {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .poi-page-layout-toggle svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .poi-page-layout-toggle.is-active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
     }
     .poi-page-sidebar .box-head {
       margin-bottom: 6px;
@@ -1554,11 +1596,22 @@
       align-items: center;
       gap: 10px;
     }
-    .cluster-bulk-toggle {
-      min-height: 38px;
-      padding-inline: 14px;
-      font-size: 0.88rem;
+    .cluster-bulk-toggle-row {
+      margin-right: 30px;
+      justify-content: flex-end;
+    }
+    .cluster-bulk-toggle-toggle {
+      gap: 10px;
+      min-height: 32px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
       white-space: nowrap;
+    }
+    .cluster-bulk-toggle-toggle .switch-label {
+      font-size: 0.88rem;
+      font-weight: 700;
     }
     .map-sidebar-head .box-status {
       margin-top: 0;
@@ -1585,6 +1638,42 @@
     }
     .noise-toggle .switch-input:checked + .switch-track .switch-thumb {
       transform: translateX(20px);
+    }
+    .noise-infraction-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .noise-infraction-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(120, 113, 108, 0.14);
+      background: rgba(255, 255, 255, 0.82);
+      font-size: 0.74rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    }
+    .noise-infraction-toggle:hover {
+      border-color: rgba(37, 99, 235, 0.28);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    }
+    .noise-infraction-toggle.is-active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: white;
+    }
+    .noise-infraction-toggle.is-inactive {
+      color: var(--muted);
+    }
+    .cluster-noise.is-collapsed .noise-infraction-filters {
+      display: none;
     }
     .map-point-box-toggle {
       gap: 10px;
@@ -1649,7 +1738,8 @@
       width: 100%;
       justify-self: stretch;
       min-height: calc(var(--map-stage-height) + 120px);
-      height: auto;
+      height: calc(var(--map-stage-height) + 120px);
+      max-height: calc(var(--map-stage-height) + 120px);
       overflow: hidden;
     }
     .poi-manager-head {
@@ -1759,6 +1849,8 @@
     }
     .poi-list {
       display: grid;
+      grid-auto-rows: min-content;
+      align-content: start;
       gap: 10px;
       min-width: 0;
       min-height: 0;
@@ -1783,8 +1875,34 @@
       border-radius: 16px;
       border: 1px solid rgba(120, 113, 108, 0.12);
       background: rgba(255, 255, 255, 0.96);
+      align-self: start;
       cursor: pointer;
       transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+    }
+    .poi-list-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      appearance: none;
+    }
+    .poi-list-item-header:focus-visible {
+      outline: 2px solid rgba(194, 65, 12, 0.35);
+      outline-offset: 3px;
+      border-radius: 12px;
+    }
+    .poi-list-item-header .poi-list-item-main {
+      flex: 1;
+    }
+    .poi-list-item-header .collapse-indicator {
+      flex-shrink: 0;
     }
     .poi-list-item:hover {
       transform: translateY(-1px);
@@ -1796,16 +1914,23 @@
       box-shadow: 0 14px 28px rgba(194, 65, 12, 0.12);
       background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,247,237,0.94));
     }
-    .poi-list-item-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
+    .poi-list-item.is-expanded .collapse-indicator {
+      transform: rotate(180deg);
+      color: var(--accent);
     }
     .poi-list-item-main {
       display: grid;
       gap: 4px;
       min-width: 0;
+    }
+    .poi-list-item-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+      position: relative;
+      padding-right: 84px;
     }
     .poi-list-item-title {
       font-size: 0.95rem;
@@ -1825,10 +1950,19 @@
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
+      justify-content: flex-end;
     }
     .poi-list-item-delete {
-      padding: 8px 10px;
-      min-height: 34px;
+      padding: 7px 10px;
+      min-height: 32px;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      flex-shrink: 0;
+    }
+    .poi-list-item.is-collapsed .poi-list-item-description {
+      display: none;
     }
     @media (max-width: 1100px) {
       .grid-3, .split { grid-template-columns: 1fr; }
@@ -1857,6 +1991,11 @@
       .poi-manager-head .box-status {
         justify-self: stretch;
         text-align: left;
+      }
+      .poi-manager-box {
+        height: auto;
+        max-height: none;
+        min-height: 0;
       }
       .poi-manager-layout { grid-template-columns: 1fr; }
     }
@@ -2095,31 +2234,38 @@
         <div class="map-sidebar box">
           <div class="map-sidebar-head">
             <div class="map-sidebar-title-row">
-              <h3 class="map-sidebar-title">Cluster disponibili</h3>
+              <h3 class="map-sidebar-title">Cluster</h3>
               <div class="inline-status box-status" id="runMapStatus" aria-live="polite">Seleziona un risultato per usare la mappa</div>
-            </div>
-            <div class="map-sidebar-actions">
-              <button class="btn primary cluster-bulk-toggle" id="clusterBulkToggle" type="button" disabled>Attiva tutti i cluster</button>
             </div>
           </div>
           <div class="cluster-item cluster-noise" id="noisePointsBox">
-            <div class="cluster-item-top">
+            <div class="cluster-item-top interactive" id="noisePointsBoxHeader" role="button" tabindex="0" aria-expanded="true" aria-controls="noisePointsContent">
               <div class="cluster-item-lead">
                 <div class="cluster-item-header">
                   <div class="cluster-item-title-row">
                     <div class="cluster-item-title">Punti fuori cluster</div>
-                    <div class="cluster-item-count" id="noisePointsCount">0 punti</div>
+                    <span class="collapse-indicator" aria-hidden="true">▾</span>
                   </div>
-                  <div class="cluster-item-meta" id="noisePointsMeta">Punti non assegnati a nessun cluster</div>
+                  <div class="cluster-item-meta" id="noisePointsMeta">0 punti</div>
                 </div>
               </div>
-              <div class="cluster-item-actions">
+              <div class="cluster-item-actions cluster-noise-actions">
                 <label class="noise-toggle" aria-label="Mostra punti fuori cluster">
                   <input type="checkbox" class="switch-input" id="noisePointsToggle" aria-label="Mostra punti fuori cluster">
                   <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
                 </label>
               </div>
             </div>
+            <div class="collapsible-content" id="noisePointsContent">
+              <div class="noise-infraction-filters" id="noisePointsFilters" role="group" aria-label="Filtri punti fuori cluster per categoria"></div>
+            </div>
+          </div>
+          <div class="map-sidebar-actions cluster-bulk-toggle-row">
+            <label class="noise-toggle cluster-bulk-toggle-toggle" aria-label="Seleziona tutto">
+              <span class="switch-label" id="clusterBulkToggleLabel">Seleziona tutto</span>
+              <input class="switch-input" id="clusterBulkToggle" type="checkbox" disabled aria-label="Seleziona tutto">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
           </div>
           <div class="cluster-list" id="runMapClusters"></div>
         </div>
@@ -2186,6 +2332,18 @@
         </div>
         <div class="poi-page-actions">
           <div class="inline-status box-status poi-page-status" id="poiPageStatus" aria-live="polite">Seleziona uno o piu POI per mostrarli sulla mappa.</div>
+          <button class="btn ghost map-settings-btn poi-page-layout-toggle" id="poiPageLayoutBtn" type="button" aria-label="Attiva layout a tutta larghezza" aria-pressed="false" title="Attiva layout a tutta larghezza">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M9 3H3v6"></path>
+              <path d="M15 3h6v6"></path>
+              <path d="M3 15v6h6"></path>
+              <path d="M21 15v6h-6"></path>
+              <path d="M3 3l7 7"></path>
+              <path d="M21 3l-7 7"></path>
+              <path d="M3 21l7-7"></path>
+              <path d="M21 21l-7-7"></path>
+            </svg>
+          </button>
           <div class="map-settings" id="poiMapSettings">
             <button class="btn ghost map-settings-btn" id="poiMapSettingsBtn" type="button" aria-label="Opzioni mappa" aria-expanded="false" aria-controls="poiMapSettingsMenu">⚙</button>
             <div class="map-settings-menu" id="poiMapSettingsMenu" hidden role="menu" aria-label="Opzioni mappa">
@@ -2243,7 +2401,7 @@
           </div>
         </div>
       </div>
-      <div class="poi-page-layout">
+      <div class="poi-page-layout" id="poiPageLayout">
         <div class="map-stage-main poi-page-map-stage">
           <div class="poi-page-map" id="poiMap" aria-label="Mappa dei POI"></div>
           <div class="map-empty" id="poiMapEmpty">Seleziona uno o piu POI a destra per visualizzarli sulla mappa.</div>
@@ -2251,9 +2409,12 @@
         <div class="box content-box poi-page-sidebar">
           <div class="box-head">
             <h3>Elenco POI</h3>
-            <button class="btn primary" id="poiToggleAllBtn" type="button">Seleziona tutto</button>
+            <label class="noise-toggle cluster-bulk-toggle-toggle" aria-label="Seleziona tutto">
+              <span class="switch-label" id="poiToggleAllLabel">Seleziona tutto</span>
+              <input class="switch-input" id="poiToggleAllBtn" type="checkbox" disabled aria-label="Seleziona tutto">
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
           </div>
-          <p class="poi-page-hint">La selezione della lista controlla i marker mostrati sulla mappa. Il pulsante in testa alterna selezione e deselezione di tutti i POI.</p>
           <div class="poi-page-list" id="poiPageList" aria-live="polite"></div>
         </div>
       </div>
@@ -2298,6 +2459,9 @@
     const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright';
     const MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.mapLayerGroups.v1';
     const POI_MAP_LAYER_SETTINGS_STORAGE_KEY = 'poistudio.poiMapLayerGroups.v1';
+    const POI_PAGE_LAYOUT_WIDE_STORAGE_KEY = 'poistudio.poiPageWideLayout.v1';
+    const RUN_MAP_NOISE_INFRACTION_SELECTION_KEY = 'poistudio.runMapNoiseInfractionIds.v1';
+    const RUN_MAP_NOISE_PANEL_COLLAPSED_KEY = 'poistudio.runMapNoisePanelCollapsed.v1';
     const ACTIVE_PAGE_STORAGE_KEY = 'poistudio.activePageId.v1';
     const POI_SELECTION_STORAGE_KEY = 'poistudio.poiSelectedIds.v1';
 
@@ -2447,6 +2611,15 @@
       }
     }
 
+    function loadPersistedPoiPageWideLayout() {
+      try {
+        if (typeof localStorage === 'undefined') return false;
+        return localStorage.getItem(POI_PAGE_LAYOUT_WIDE_STORAGE_KEY) === 'true';
+      } catch {
+        return false;
+      }
+    }
+
     function loadPersistedActivePageId() {
       const fallbackPageId = 'config-page';
       try {
@@ -2473,6 +2646,15 @@
       try {
         if (typeof localStorage === 'undefined') return;
         localStorage.setItem(POI_MAP_LAYER_SETTINGS_STORAGE_KEY, JSON.stringify(state.poiMapVisibleLayerGroups));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
+    function persistPoiPageWideLayout() {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(POI_PAGE_LAYOUT_WIDE_STORAGE_KEY, state.poiPageWideLayout ? 'true' : 'false');
       } catch {
         /* localStorage may be unavailable or full */
       }
@@ -2509,7 +2691,57 @@
       }
     }
 
+    function getDefaultRunMapNoiseInfractionIds() {
+      return infractionOptions.map(([id]) => String(id));
+    }
+
+    function loadPersistedRunMapNoiseInfractionIds() {
+      try {
+        if (typeof localStorage === 'undefined') return getDefaultRunMapNoiseInfractionIds();
+        const raw = localStorage.getItem(RUN_MAP_NOISE_INFRACTION_SELECTION_KEY);
+        if (!raw) return getDefaultRunMapNoiseInfractionIds();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return getDefaultRunMapNoiseInfractionIds();
+        const allowed = new Set(getDefaultRunMapNoiseInfractionIds());
+        return Array.from(new Set(parsed.map(id => String(id)).filter(id => allowed.has(id))));
+      } catch {
+        return getDefaultRunMapNoiseInfractionIds();
+      }
+    }
+
+    function persistRunMapNoiseInfractionIds(ids = []) {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        const allowed = new Set(getDefaultRunMapNoiseInfractionIds());
+        const uniqueIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map(id => String(id)).filter(id => allowed.has(id))));
+        localStorage.setItem(RUN_MAP_NOISE_INFRACTION_SELECTION_KEY, JSON.stringify(uniqueIds));
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
+    function loadPersistedRunMapNoisePanelCollapsed() {
+      try {
+        if (typeof localStorage === 'undefined') return false;
+        return localStorage.getItem(RUN_MAP_NOISE_PANEL_COLLAPSED_KEY) === 'true';
+      } catch {
+        return false;
+      }
+    }
+
+    function persistRunMapNoisePanelCollapsed(collapsed = false) {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(RUN_MAP_NOISE_PANEL_COLLAPSED_KEY, collapsed ? 'true' : 'false');
+      } catch {
+        /* localStorage may be unavailable or full */
+      }
+    }
+
     const initialPoiSelectedIds = loadPersistedPoiSelectionIds();
+    const initialPoiPageWideLayout = loadPersistedPoiPageWideLayout();
+    const initialRunMapNoiseInfractionIds = loadPersistedRunMapNoiseInfractionIds();
+    const initialRunMapNoisePanelCollapsed = loadPersistedRunMapNoisePanelCollapsed();
 
     const state = {
       config: null,
@@ -2521,7 +2753,9 @@
       poiSelectionMode: initialPoiSelectedIds.length ? 'custom' : 'none',
       poiMap: null,
       poiMapPopup: null,
+      poiPageWideLayout: initialPoiPageWideLayout,
       editingClusterPoiId: null,
+      clusterPoiCollapsedById: {},
       clusterPoiMode: 'idle',
       clusterPoiSaving: false,
       poiRuns: [],
@@ -2543,6 +2777,8 @@
       runMapNoiseEnabled: false,
       runMapNoisePayload: null,
       runMapNoiseLayer: null,
+      runMapNoiseInfractionIds: initialRunMapNoiseInfractionIds,
+      runMapNoisePanelCollapsed: initialRunMapNoisePanelCollapsed,
       runMapSelectedPoints: [],
       runMapSelectedPointCollapsedByKey: {},
       runMapSelectionOverlayPending: false,
@@ -2584,7 +2820,10 @@
       mapPageStatus: document.getElementById('mapPageStatus'),
       poiPageTitle: document.getElementById('poiPageTitle'),
       poiPageStatus: document.getElementById('poiPageStatus'),
+      poiPageLayout: document.getElementById('poiPageLayout'),
+      poiPageLayoutBtn: document.getElementById('poiPageLayoutBtn'),
       poiToggleAllBtn: document.getElementById('poiToggleAllBtn'),
+      poiToggleAllLabel: document.getElementById('poiToggleAllLabel'),
       poiPageList: document.getElementById('poiPageList'),
       poiMap: document.getElementById('poiMap'),
       poiMapEmpty: document.getElementById('poiMapEmpty'),
@@ -2598,9 +2837,12 @@
       runMapPointDetail: document.getElementById('runMapPointDetail'),
       runMapPointDetailControls: document.getElementById('runMapPointDetailControls'),
       clusterBulkToggle: document.getElementById('clusterBulkToggle'),
+      clusterBulkToggleLabel: document.getElementById('clusterBulkToggleLabel'),
       noisePointsToggle: document.getElementById('noisePointsToggle'),
-      noisePointsCount: document.getElementById('noisePointsCount'),
+      noisePointsBoxHeader: document.getElementById('noisePointsBoxHeader'),
       noisePointsMeta: document.getElementById('noisePointsMeta'),
+      noisePointsContent: document.getElementById('noisePointsContent'),
+      noisePointsFilters: document.getElementById('noisePointsFilters'),
       runMapClusters: document.getElementById('runMapClusters'),
       resultsMap: document.getElementById('resultsMap'),
       runMapSelectionBox: document.getElementById('runMapSelectionBox'),
@@ -2654,6 +2896,95 @@
     function getSelectedInfractionIds() {
       return Array.from(els.executionSetFilters.querySelectorAll('.switch-input:checked'))
         .map(input => Number(input.dataset.value));
+    }
+
+    function getRunMapNoiseInfractionIdsSet() {
+      return new Set((Array.isArray(state.runMapNoiseInfractionIds) ? state.runMapNoiseInfractionIds : []).map(id => String(id)).filter(Boolean));
+    }
+
+    function getRunMapNoiseInfractionId(point = {}) {
+      const raw = point?.IdTipoInfrazione;
+      const numeric = Number(raw);
+      if (Number.isFinite(numeric)) return String(numeric);
+      return '0';
+    }
+
+    function getRunMapNoiseSelectedPoints(noise = state.runMapNoisePayload) {
+      const selected = getRunMapNoiseInfractionIdsSet();
+      const points = Array.isArray(noise?.Punti) ? noise.Punti : [];
+      return points.filter(point => selected.has(getRunMapNoiseInfractionId(point)));
+    }
+
+    function getNoiseInfractionDisplayLabel(label = '') {
+      const raw = String(label || '').trim();
+      const separatorIndex = raw.indexOf(' - ');
+      return separatorIndex >= 0 ? raw.slice(separatorIndex + 3).trim() : raw;
+    }
+
+    function renderRunMapNoiseFilters() {
+      if (!els.noisePointsFilters) return;
+      const selected = getRunMapNoiseInfractionIdsSet();
+      els.noisePointsFilters.innerHTML = infractionOptions.map(([value, label]) => {
+        const checked = selected.has(String(value));
+        return `
+          <button
+            class="noise-infraction-toggle ${checked ? 'is-active' : 'is-inactive'}"
+            type="button"
+            data-noise-infraction-toggle="${escapeHtml(value)}"
+            aria-pressed="${checked ? 'true' : 'false'}"
+          >
+            <span class="noise-infraction-label">${escapeHtml(getNoiseInfractionDisplayLabel(label))}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function syncRunMapNoisePanel() {
+      const collapsed = Boolean(state.runMapNoisePanelCollapsed);
+      if (els.noisePointsBox) {
+        els.noisePointsBox.classList.toggle('is-collapsed', collapsed);
+      }
+      if (els.noisePointsBoxHeader) {
+        els.noisePointsBoxHeader.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      }
+      if (els.noisePointsContent) {
+        els.noisePointsContent.hidden = collapsed;
+      }
+      if (els.noisePointsFilters) {
+        els.noisePointsFilters.hidden = collapsed;
+      }
+    }
+
+    function setRunMapNoiseInfractionIds(ids = []) {
+      const allowed = new Set(getDefaultRunMapNoiseInfractionIds());
+      const uniqueIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map(id => String(id)).filter(id => allowed.has(id))));
+      state.runMapNoiseInfractionIds = uniqueIds;
+      persistRunMapNoiseInfractionIds(uniqueIds);
+      renderRunMapNoiseFilters();
+      if (state.runMapNoiseEnabled && state.runMapNoisePayload) {
+        refreshRunMapNoiseLayer();
+      } else {
+        syncRunMapNoiseSelection(Number(state.runMapNoisePayload?.PointCount ?? 0));
+      }
+    }
+
+    function toggleRunMapNoiseInfractionId(id = '', enabled = null) {
+      const current = getRunMapNoiseInfractionIdsSet();
+      const noiseId = String(id);
+      const shouldEnable = enabled == null ? !current.has(noiseId) : Boolean(enabled);
+      if (shouldEnable) current.add(noiseId);
+      else current.delete(noiseId);
+      setRunMapNoiseInfractionIds(Array.from(current));
+    }
+
+    function setRunMapNoisePanelCollapsed(collapsed = false) {
+      state.runMapNoisePanelCollapsed = Boolean(collapsed);
+      persistRunMapNoisePanelCollapsed(state.runMapNoisePanelCollapsed);
+      syncRunMapNoisePanel();
+    }
+
+    function toggleRunMapNoisePanelCollapsed() {
+      setRunMapNoisePanelCollapsed(!state.runMapNoisePanelCollapsed);
     }
 
     function getConfigForm() {
@@ -2905,21 +3236,25 @@
 
     function setRunResultsTab() {}
 
+    const POI_COLOR_PALETTE = ['#3E92CC', '#16324F', '#F0544F', '#D81E5B', '#7D4600', '#E0FF4F', '#FBB13C', '#659B5E', '#E87EA1', '#990099'];
+
     function getClusterColor(clusterId) {
       const palette = ['#c2410c', '#0f766e', '#2563eb', '#b45309', '#be185d', '#4f46e5', '#15803d', '#7c3aed', '#0369a1', '#a16207'];
       const index = Math.max(0, (Number(clusterId) || 1) - 1) % palette.length;
       return palette[index];
     }
 
-    function getPoiColor(poiId = '') {
-      const palette = ['#c2410c', '#0f766e', '#2563eb', '#be185d', '#4f46e5', '#15803d', '#7c3aed', '#0369a1', '#b45309', '#ea580c'];
+    function getPoiColorIndex(poiId = '') {
       const text = String(poiId || '');
       let hash = 0;
       for (let index = 0; index < text.length; index += 1) {
         hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
       }
-      const normalized = Math.abs(hash) % palette.length;
-      return palette[normalized];
+      return Math.abs(hash) % POI_COLOR_PALETTE.length;
+    }
+
+    function getPoiColor(poiId = '') {
+      return POI_COLOR_PALETTE[getPoiColorIndex(poiId)];
     }
 
     function getInfractionPieColor(value) {
@@ -3096,7 +3431,9 @@
 
     function updateRunMapEmptyState() {
       const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
-      const shouldHide = activeCount > 0 || Boolean(state.runMapNoiseEnabled);
+      const hasVisibleNoise = Boolean(state.runMapNoiseEnabled)
+        && (getRunMapNoiseSelectedPoints().length > 0 || getRunMapNoiseVisiblePointCount() > 0);
+      const shouldHide = activeCount > 0 || hasVisibleNoise;
       els.resultsMapEmpty.hidden = shouldHide;
       els.resultsMapEmpty.style.display = shouldHide ? 'none' : '';
       els.resultsMapEmpty.setAttribute('aria-hidden', shouldHide ? 'true' : 'false');
@@ -3117,9 +3454,8 @@
       buttonEl.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
-    function syncMapSettingsMenu() {
-      syncMapLayerGroupMenu(els.mapSettingsMenu);
-      syncMapLayerGroupMenu(els.poiMapSettingsMenu);
+    function syncMapSettingsMenu(menuEl = els.mapSettingsMenu, visibleGroups = state.runMapVisibleLayerGroups) {
+      syncMapLayerGroupMenu(menuEl, visibleGroups);
     }
 
     function getRunMapAggregatePointId(point = {}) {
@@ -3147,16 +3483,29 @@
     }
 
     function buildClusterGeoJson(cluster) {
-      return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], point => ({
-        ...point,
-        aggregateClusterId: cluster.ClusterId,
-        aggregatePointId: getRunMapAggregatePointId(point),
-        aggregatePointRef: getRunMapAggregatePointRef('cluster', cluster.ClusterId, point),
-        aggregatePointIdsText: `${getRunMapAggregatePointId(point)}|`,
-        aggregatePointRefsText: `${getRunMapAggregatePointRef('cluster', cluster.ClusterId, point)}|`,
-        sourceType: 'cluster',
-        sourceLabel: `Cluster ${cluster.ClusterId}`
-      }));
+      const occupiedKeys = getVisibleClusterPoiOccupiedPointKeys();
+      const clusterId = Number(cluster?.ClusterId);
+      const clusterName = String(cluster?.ClusterName || cluster?.Nome || cluster?.name || `Cluster ${clusterId || ''}`).trim() || `Cluster ${clusterId || ''}`;
+      return buildPointsGeoJson(Array.isArray(cluster?.Punti) ? cluster.Punti : [], point => {
+        const enrichedPoint = {
+          ...point,
+          clusterId: Number.isFinite(clusterId) ? clusterId : cluster?.ClusterId,
+          clusterName,
+          aggregateClusterId: Number.isFinite(clusterId) ? clusterId : cluster?.ClusterId,
+          sourceType: 'cluster',
+          sourceLabel: clusterName
+        };
+        const pointKey = getRunMapPersistentPointKey(enrichedPoint);
+        return {
+          ...enrichedPoint,
+          aggregatePointId: getRunMapAggregatePointId(enrichedPoint),
+          aggregatePointRef: getRunMapAggregatePointRef('cluster', clusterId, enrichedPoint),
+          aggregatePointIdsText: `${getRunMapAggregatePointId(enrichedPoint)}|`,
+          aggregatePointRefsText: `${getRunMapAggregatePointRef('cluster', clusterId, enrichedPoint)}|`,
+          poiOccupied: occupiedKeys.has(pointKey),
+          poiOccupiedValue: occupiedKeys.has(pointKey) ? 1 : 0
+        };
+      });
     }
 
     function buildRunMapSelectionGeoJson(points = []) {
@@ -3512,8 +3861,16 @@
         .filter(point => Number.isFinite(Number(point.Latitudine)) && Number.isFinite(Number(point.Longitudine)));
     }
 
+    function getVisibleClusterPoiOccupiedPointKeys() {
+      return new Set(
+        getVisibleClusterPoiPoints()
+          .map(point => getRunMapPersistentPointKey(point))
+          .filter(Boolean)
+      );
+    }
+
     function filterAvailableRunMapPoints(points = []) {
-      const occupiedKeys = new Set(getVisibleClusterPoiPoints().map(point => getRunMapPersistentPointKey(point)).filter(Boolean));
+      const occupiedKeys = getVisibleClusterPoiOccupiedPointKeys();
       return (Array.isArray(points) ? points : []).filter(point => {
         const key = getRunMapPersistentPointKey(point);
         return !key || !occupiedKeys.has(key);
@@ -3521,7 +3878,7 @@
     }
 
     function pruneAssignedRunMapSelectedPoints() {
-      const occupiedKeys = new Set(getVisibleClusterPoiPoints().map(point => getRunMapPersistentPointKey(point)).filter(Boolean));
+      const occupiedKeys = getVisibleClusterPoiOccupiedPointKeys();
       if (!occupiedKeys.size) return;
       pruneRunMapSelectedPoints(point => occupiedKeys.has(getRunMapPersistentPointKey(point)));
     }
@@ -3660,6 +4017,26 @@
       return getPoiItems().find(item => String(item.id) === String(id)) || null;
     }
 
+    function isClusterPoiCollapsed(id = '') {
+      const key = String(id || '');
+      if (!key) return true;
+      return state.clusterPoiCollapsedById?.[key] !== false;
+    }
+
+    function setClusterPoiCollapsed(id = '', collapsed = true) {
+      const key = String(id || '');
+      if (!key) return;
+      const next = { ...(state.clusterPoiCollapsedById || {}) };
+      next[key] = Boolean(collapsed);
+      state.clusterPoiCollapsedById = next;
+    }
+
+    function toggleClusterPoiCollapsed(id = '') {
+      const key = String(id || '');
+      if (!key) return;
+      setClusterPoiCollapsed(key, !isClusterPoiCollapsed(key));
+    }
+
     function getPoiLoadedIds() {
       return getPoiItems().map(item => String(item.id)).filter(Boolean);
     }
@@ -3739,12 +4116,14 @@
         .flatMap((item, poiIndex) => {
           const points = Array.isArray(item.points) ? item.points : [];
           const color = getPoiColor(item.id);
+          const colorIndex = getPoiColorIndex(item.id);
           return buildPointsGeoJson(points, (point, pointIndex) => ({
             ...point,
             poiId: String(item.id || ''),
             poiName: String(item.name || 'POI senza nome'),
             poiDescription: String(item.description || ''),
             poiColor: color,
+            poiColorIndex: colorIndex,
             poiIndex,
             poiPointIndex: pointIndex,
             poiPointCount: Number(item.pointCount ?? points.length) || points.length,
@@ -3767,6 +4146,13 @@
       return hasBounds ? bounds : null;
     }
 
+    function isPoiMapBoundsDegenerate(bounds = null) {
+      if (!Array.isArray(bounds) || bounds.length !== 2) return false;
+      const [southWest, northEast] = bounds;
+      if (!Array.isArray(southWest) || !Array.isArray(northEast)) return false;
+      return southWest[0] === northEast[0] && southWest[1] === northEast[1];
+    }
+
     function updatePoiPageHeader() {
       const total = getPoiItems().length;
       const selected = (Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).length;
@@ -3781,9 +4167,52 @@
       }
       if (els.poiToggleAllBtn) {
         els.poiToggleAllBtn.disabled = total === 0;
-        const allSelected = total > 0 && selected === total;
-        els.poiToggleAllBtn.textContent = allSelected ? 'Deseleziona tutto' : 'Seleziona tutto';
+        els.poiToggleAllBtn.checked = total > 0 && selected === total;
       }
+      if (els.poiToggleAllLabel) {
+        const allSelected = total > 0 && selected === total;
+        els.poiToggleAllLabel.textContent = allSelected ? 'Deseleziona tutto' : 'Seleziona tutto';
+      }
+    }
+
+    function syncPoiPageLayoutMode() {
+      const wide = Boolean(state.poiPageWideLayout);
+      if (els.poiPageLayout) {
+        els.poiPageLayout.classList.toggle('is-wide', wide);
+      }
+      if (els.poiPageLayoutBtn) {
+        els.poiPageLayoutBtn.classList.toggle('is-active', wide);
+        els.poiPageLayoutBtn.setAttribute('aria-pressed', wide ? 'true' : 'false');
+        els.poiPageLayoutBtn.setAttribute('aria-label', wide ? 'Ripristina layout standard' : 'Attiva layout a tutta larghezza');
+        els.poiPageLayoutBtn.title = wide ? 'Ripristina layout standard' : 'Attiva layout a tutta larghezza';
+      }
+    }
+
+    function resizePoiMapAfterLayoutChange() {
+      if (!state.poiMap) return;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          state.poiMap?.resize?.();
+        });
+      });
+    }
+
+    function setPoiPageWideLayout(wide = false) {
+      const next = Boolean(wide);
+      if (state.poiPageWideLayout === next) {
+        syncPoiPageLayoutMode();
+        return;
+      }
+      state.poiPageWideLayout = next;
+      persistPoiPageWideLayout();
+      syncPoiPageLayoutMode();
+      if (state.activePageId === 'poi-page') {
+        resizePoiMapAfterLayoutChange();
+      }
+    }
+
+    function togglePoiPageWideLayout() {
+      setPoiPageWideLayout(!state.poiPageWideLayout);
     }
 
     function renderPoiPageList() {
@@ -3852,7 +4281,15 @@
       } else {
         const bounds = getPoiMapBounds(features);
         if (bounds) {
-          state.poiMap.fitBounds(bounds, { padding: 56, duration: 0 });
+          if (isPoiMapBoundsDegenerate(bounds)) {
+            state.poiMap.easeTo({
+              center: [bounds[0][0], bounds[0][1]],
+              zoom: 13,
+              duration: 0
+            });
+          } else {
+            state.poiMap.fitBounds(bounds, { padding: 56, duration: 0 });
+          }
         }
       }
     }
@@ -3872,14 +4309,73 @@
           if (!state.poiMap.getSource('poi-page-source')) {
             state.poiMap.addSource('poi-page-source', {
               type: 'geojson',
-              data: { type: 'FeatureCollection', features: [] }
+              data: { type: 'FeatureCollection', features: [] },
+              cluster: true,
+              clusterProperties: {
+                poiColorIndex: ['max', ['get', 'poiColorIndex']]
+              },
+              clusterRadius: 18,
+              clusterMaxZoom: 16
             });
           }
-          if (!state.poiMap.getLayer('poi-page-circles')) {
+          if (!state.poiMap.getLayer('poi-page-clusters')) {
             state.poiMap.addLayer({
-              id: 'poi-page-circles',
+              id: 'poi-page-clusters',
               type: 'circle',
               source: 'poi-page-source',
+              filter: ['has', 'point_count'],
+              paint: {
+                'circle-color': [
+                  'match',
+                  ['get', 'poiColorIndex'],
+                  0, POI_COLOR_PALETTE[0],
+                  1, POI_COLOR_PALETTE[1],
+                  2, POI_COLOR_PALETTE[2],
+                  3, POI_COLOR_PALETTE[3],
+                  4, POI_COLOR_PALETTE[4],
+                  5, POI_COLOR_PALETTE[5],
+                  6, POI_COLOR_PALETTE[6],
+                  7, POI_COLOR_PALETTE[7],
+                  8, POI_COLOR_PALETTE[8],
+                  9, POI_COLOR_PALETTE[9],
+                  '#475569'
+                ],
+                'circle-radius': [
+                  'step',
+                  ['get', 'point_count'],
+                  11,
+                  10, 14,
+                  25, 17,
+                  50, 20
+                ],
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.9
+              }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-cluster-count')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-cluster-count',
+              type: 'symbol',
+              source: 'poi-page-source',
+              filter: ['has', 'point_count'],
+              layout: {
+                'text-field': '{point_count_abbreviated}',
+                'text-size': 12,
+                'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold']
+              },
+              paint: {
+                'text-color': '#ffffff'
+              }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-single-points')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-single-points',
+              type: 'circle',
+              source: 'poi-page-source',
+              filter: ['!', ['has', 'point_count']],
               paint: {
                 'circle-color': ['coalesce', ['get', 'poiColor'], '#c2410c'],
                 'circle-radius': 7.5,
@@ -3889,12 +4385,12 @@
               }
             });
           }
-          if (!state.poiMap.getLayer('poi-page-labels')) {
+          if (!state.poiMap.getLayer('poi-page-single-labels')) {
             state.poiMap.addLayer({
-              id: 'poi-page-labels',
+              id: 'poi-page-single-labels',
               type: 'symbol',
               source: 'poi-page-source',
-              filter: ['!=', ['get', 'poiLabel'], ''],
+              filter: ['all', ['!', ['has', 'point_count']], ['!=', ['get', 'poiLabel'], '']],
               layout: {
                 'text-field': ['get', 'poiLabel'],
                 'text-size': 12,
@@ -3909,20 +4405,6 @@
               }
             });
           }
-          ['poi-page-circles', 'poi-page-labels'].forEach(layerId => {
-            state.poiMap.on('click', layerId, event => {
-              const feature = event.features && event.features[0];
-              const poiId = feature?.properties?.poiId;
-              if (!poiId) return;
-              togglePoiSelection(poiId);
-            });
-            state.poiMap.on('mouseenter', layerId, () => {
-              if (state.poiMap?.getCanvas) state.poiMap.getCanvas().style.cursor = 'pointer';
-            });
-            state.poiMap.on('mouseleave', layerId, () => {
-              if (state.poiMap?.getCanvas) state.poiMap.getCanvas().style.cursor = '';
-            });
-          });
           applyAllPoiMapLayerVisibilities();
           renderPoiMapSource();
         });
@@ -3936,7 +4418,9 @@
       if (state.clusterPoisLoaded) {
         syncPoiSelectionToLoadedPois();
       }
+      syncPoiPageLayoutMode();
       updatePoiPageHeader();
+      syncMapSettingsMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
       renderPoiPageList();
       await ensurePoiMapReady();
       renderPoiMapSource();
@@ -4054,6 +4538,7 @@
 
       els.clusterPoiList.innerHTML = pois.map(item => {
         const active = state.editingClusterPoiId === item.id && state.clusterPoiMode === 'edit';
+        const collapsed = isClusterPoiCollapsed(item.id);
         const subtitle = [
           `${formatCount(item.pointCount ?? 0)} punti`,
           formatRunDateTime(item.updatedAt || item.createdAt) || 'Data n/d'
@@ -4062,14 +4547,15 @@
         const shortDescription = description.length > 160 ? `${description.slice(0, 160)}...` : description;
 
         return `
-          <article class="poi-list-item ${active ? 'active' : ''}" data-cluster-poi-id="${escapeHtml(item.id)}" tabindex="0" role="button" aria-pressed="${active ? 'true' : 'false'}">
-            <div class="poi-list-item-top">
+          <article class="poi-list-item ${active ? 'active' : ''} ${collapsed ? 'is-collapsed' : 'is-expanded'}" data-cluster-poi-id="${escapeHtml(item.id)}" tabindex="0" role="button" aria-pressed="${active ? 'true' : 'false'}">
+            <div class="poi-list-item-header" data-cluster-poi-toggle="${escapeHtml(item.id)}" role="button" tabindex="0" aria-expanded="${collapsed ? 'false' : 'true'}">
               <div class="poi-list-item-main">
-                <div class="poi-list-item-title">${escapeHtml(item.name || 'POI senza nome')}</div>
+                <div class="poi-list-item-title-row">
+                  <div class="poi-list-item-title">${escapeHtml(item.name || 'POI senza nome')}</div>
+                  <span class="collapse-indicator" aria-hidden="true">▾</span>
+                  <button class="btn danger poi-list-item-delete" type="button" data-cluster-poi-delete="${escapeHtml(item.id)}">Elimina</button>
+                </div>
                 <div class="poi-list-item-subtitle">${escapeHtml(subtitle)}</div>
-              </div>
-              <div class="poi-list-item-actions">
-                <button class="btn danger poi-list-item-delete" type="button" data-cluster-poi-delete="${escapeHtml(item.id)}">Elimina</button>
               </div>
             </div>
             ${shortDescription ? `<div class="poi-list-item-description">${escapeHtml(shortDescription)}</div>` : ''}
@@ -4140,6 +4626,7 @@
         syncPoiSelectionToLoadedPois();
         pruneAssignedRunMapSelectedPoints();
         syncRunMapSelectionOverlay();
+        refreshRunMapClusterLayers();
         renderClusterPoiManager();
         updatePoiPageHeader();
         if (state.activePageId === 'poi-page') {
@@ -4222,6 +4709,11 @@
       if (!confirm(`Eliminare il POI "${item.name}"?`)) return;
       try {
         await fetchJson(`${API.clusterPois}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (state.clusterPoiCollapsedById && Object.prototype.hasOwnProperty.call(state.clusterPoiCollapsedById, id)) {
+          const nextCollapsed = { ...state.clusterPoiCollapsedById };
+          delete nextCollapsed[id];
+          state.clusterPoiCollapsedById = nextCollapsed;
+        }
         if (state.editingClusterPoiId === id) {
           resetClusterPoiEditor('idle');
         }
@@ -4652,7 +5144,7 @@
       const clusterLayerId = 'noise-clusters';
       const countLayerId = 'noise-cluster-count';
       const pointLayerId = 'noise-points';
-      const data = buildPointsGeoJson(Array.isArray(noise?.Punti) ? noise.Punti : [], point => ({
+      const data = buildPointsGeoJson(getRunMapNoiseSelectedPoints(noise), point => ({
         ...point,
         sourceType: 'noise',
         sourceLabel: 'Punti fuori cluster',
@@ -4672,7 +5164,8 @@
           clusterMaxZoom: 24,
           clusterProperties: {
             aggregatePointIdsText: ['concat', ['get', 'aggregatePointIdsText']],
-            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']]
+            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']],
+            poiOccupiedCount: ['+', ['get', 'poiOccupiedValue']]
           },
           data
         });
@@ -4738,7 +5231,7 @@
       syncRunMapSelectionOverlay();
     }
 
-    function getRunMapNoiseVisibleCount() {
+    function getRunMapNoiseVisiblePointCount() {
       if (!state.runMap || !state.runMapNoiseLayer) return 0;
       const layerIds = Array.isArray(state.runMapNoiseLayer.layerIds)
         ? state.runMapNoiseLayer.layerIds.filter(layerId => layerId && layerId !== 'noise-cluster-count')
@@ -4750,16 +5243,29 @@
       if (!width || !height) return 0;
       try {
         const features = state.runMap.queryRenderedFeatures([[0, 0], [width, height]], { layers: layerIds });
-        return Array.isArray(features) ? features.length : 0;
+        return Array.isArray(features)
+          ? features.reduce((sum, feature) => {
+              const pointCount = getRunMapFeaturePointCount(feature);
+              return sum + (pointCount > 0 ? pointCount : 1);
+            }, 0)
+          : 0;
       } catch {
         return 0;
       }
     }
 
+    function refreshRunMapNoiseLayer() {
+      if (!state.runMap || !state.runMapNoiseEnabled || !state.runMapNoisePayload) return;
+      ensureNoiseLayerOnMap(state.runMapNoisePayload);
+      state.runMap.triggerRepaint?.();
+      updateRunMapEmptyState();
+      scheduleRunMapNoiseSelectionRefresh(Number(state.runMapNoisePayload?.PointCount ?? 0));
+    }
+
     function rehydrateVisibleNoise() {
       if (!state.runMap || !state.runMapNoiseEnabled) return;
       if (state.runMapNoisePayload) {
-        ensureNoiseLayerOnMap(state.runMapNoisePayload);
+        refreshRunMapNoiseLayer();
       }
     }
 
@@ -4960,7 +5466,8 @@
           clusterMaxZoom: 24,
           clusterProperties: {
             aggregatePointIdsText: ['concat', ['get', 'aggregatePointIdsText']],
-            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']]
+            aggregatePointRefsText: ['concat', ['get', 'aggregatePointRefsText']],
+            poiOccupiedCount: ['+', ['get', 'poiOccupiedValue']]
           },
           data
         });
@@ -4973,7 +5480,12 @@
           source: sourceId,
           filter: ['has', 'point_count'],
           paint: {
-            'circle-color': color,
+            'circle-color': [
+              'case',
+              ['>', ['get', 'poiOccupiedCount'], 0],
+              '#94a3b8',
+              color
+            ],
             'circle-radius': [
               'step',
               ['get', 'point_count'],
@@ -5013,7 +5525,12 @@
           source: sourceId,
           filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-color': color,
+            'circle-color': [
+              'case',
+              ['boolean', ['get', 'poiOccupied'], false],
+              '#94a3b8',
+              color
+            ],
             'circle-radius': 7.5,
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1,
@@ -5025,6 +5542,18 @@
       state.runMapClusterLayers[clusterId] = { sourceId, layerIds: [clusterLayerId, countLayerId, pointLayerId] };
       state.runMapClusterBounds[clusterId] = buildClusterBounds(cluster);
       syncRunMapSelectionOverlay();
+    }
+
+    function refreshRunMapClusterLayers() {
+      if (!state.runMap || !isRunMapStyleReady()) return;
+      Object.entries(state.runMapClusterPayloads || {}).forEach(([clusterId, cluster]) => {
+        if (!cluster || !state.runMapEnabledClusterIds[clusterId]) return;
+        ensureClusterLayerOnMap(clusterId, cluster);
+      });
+      applyAllMapLayerVisibilities();
+      updateRunMapViewport();
+      syncRunMapSelectionOverlay();
+      updateRunMapEmptyState();
     }
 
     function removeClusterLayers(clusterId) {
@@ -5045,15 +5574,7 @@
 
     function rehydrateVisibleClusters() {
       if (!state.runMap) return;
-      Object.entries(state.runMapEnabledClusterIds).forEach(([clusterId, enabled]) => {
-        if (!enabled) return;
-        const cluster = state.runMapClusterPayloads[clusterId];
-        if (cluster) {
-          ensureClusterLayerOnMap(clusterId, cluster);
-        }
-      });
-      applyAllMapLayerVisibilities();
-      updateRunMapViewport();
+      refreshRunMapClusterLayers();
     }
 
     function updateRunMapViewport() {
@@ -5083,18 +5604,16 @@
       if (els.noisePointsToggle) {
         els.noisePointsToggle.checked = Boolean(state.runMapNoiseEnabled);
       }
-      if (els.noisePointsCount) {
-        const noiseCount = state.runMapNoisePayload?.PointCount;
-        const totalNoiseCount = Number(noiseCount ?? noiseCountFallback ?? 0);
-        const visibleNoiseCount = getRunMapNoiseVisibleCount();
-        els.noisePointsCount.textContent = totalNoiseCount > 0
-          ? `${formatCount(totalNoiseCount)} punti (${formatCount(visibleNoiseCount)} visualizzati)`
-          : `${formatCount(totalNoiseCount)} punti`;
-      }
       if (els.noisePointsMeta) {
-        els.noisePointsMeta.textContent = (state.runMapNoisePayload?.PointCount ?? noiseCountFallback ?? 0)
-          ? 'Punti non assegnati a nessun cluster'
-          : 'Nessun punto fuori cluster disponibile';
+        const totalNoiseCount = Number(state.runMapNoisePayload?.PointCount ?? noiseCountFallback ?? 0);
+        const visibleNoiseCount = getRunMapNoiseVisiblePointCount();
+        if (!totalNoiseCount) {
+          els.noisePointsMeta.textContent = 'Nessun punto fuori cluster disponibile';
+        } else if (state.runMapNoiseEnabled) {
+          els.noisePointsMeta.textContent = `${formatCount(totalNoiseCount)} punti (${formatCount(visibleNoiseCount)} visualizzati)`;
+        } else {
+          els.noisePointsMeta.textContent = `${formatCount(totalNoiseCount)} punti`;
+        }
       }
     }
 
@@ -5103,7 +5622,10 @@
       const hasClusters = Array.isArray(state.runMapClusterFiles) && state.runMapClusterFiles.length > 0;
       const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
       els.clusterBulkToggle.disabled = !hasClusters;
-      els.clusterBulkToggle.textContent = activeCount > 0 ? 'Disattiva tutti i cluster' : 'Attiva tutti i cluster';
+      els.clusterBulkToggle.checked = activeCount > 0;
+      if (els.clusterBulkToggleLabel) {
+        els.clusterBulkToggleLabel.textContent = activeCount > 0 ? 'Deseleziona tutto' : 'Seleziona tutto';
+      }
     }
 
     function disableAllRunMapClusters() {
@@ -5160,9 +5682,7 @@
         }
         const noise = state.runMapNoisePayload;
         if (!noise) throw new Error('Punti fuori cluster non disponibili');
-        ensureNoiseLayerOnMap(noise);
-        state.runMap.triggerRepaint?.();
-        updateRunMapEmptyState();
+        refreshRunMapNoiseLayer();
         updateRunMapStatus(`${formatCount(state.runMapClusterFiles.length)} cluster disponibili · ${formatCount(Object.values(state.runMapEnabledClusterIds).filter(Boolean).length)} attivi · rumore attivo`, 'ok');
         scheduleRunMapNoiseSelectionRefresh();
       } catch (err) {
@@ -5247,17 +5767,16 @@
 
       const noiseCount = Number(run?.summary?.noisePointCount ?? 0);
       const hasNoiseArtifact = Boolean(run?.artifacts?.noise?.path);
+      renderRunMapNoiseFilters();
+      syncRunMapNoisePanel();
       if (els.noisePointsToggle) {
         els.noisePointsToggle.disabled = !hasNoiseArtifact;
       }
-      if (els.noisePointsCount) {
-        els.noisePointsCount.textContent = `${formatCount(noiseCount)} punti`;
-      }
       if (els.noisePointsMeta) {
         if (hasNoiseArtifact) {
-          els.noisePointsMeta.textContent = 'Punti non assegnati a nessun cluster';
+          els.noisePointsMeta.textContent = `${formatCount(noiseCount)} punti`;
         } else if (noiseCount > 0) {
-          els.noisePointsMeta.textContent = 'Punti calcolati ma non persistiti in questo run';
+          els.noisePointsMeta.textContent = `${formatCount(noiseCount)} punti calcolati ma non persistiti in questo run`;
         } else {
           els.noisePointsMeta.textContent = 'Nessun punto fuori cluster disponibile';
         }
@@ -5986,7 +6505,7 @@
       } else if (pageId === 'run-page') {
         renderRunResults();
       } else if (pageId === 'poi-page') {
-        renderPoiPage();
+        void renderPoiPage();
       }
     }
 
@@ -6074,6 +6593,12 @@
         setMapSettingsMenuOpen(shouldOpen, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
       });
     }
+    if (els.poiPageLayoutBtn) {
+      els.poiPageLayoutBtn.addEventListener('click', event => {
+        event.stopPropagation();
+        togglePoiPageWideLayout();
+      });
+    }
     if (els.mapSettingsMenu) {
       els.mapSettingsMenu.addEventListener('click', event => {
         event.stopPropagation();
@@ -6101,7 +6626,7 @@
       });
     }
     if (els.clusterBulkToggle) {
-      els.clusterBulkToggle.addEventListener('click', () => {
+      els.clusterBulkToggle.addEventListener('change', () => {
         const activeCount = Object.values(state.runMapEnabledClusterIds).filter(Boolean).length;
         if (activeCount > 0) {
           disableAllRunMapClusters();
@@ -6113,6 +6638,25 @@
     if (els.noisePointsToggle) {
       els.noisePointsToggle.addEventListener('change', event => {
         void toggleNoisePointsOnMap(event.target.checked);
+      });
+    }
+    if (els.noisePointsBoxHeader) {
+      els.noisePointsBoxHeader.addEventListener('click', event => {
+        if (event.target.closest('button, a, input, label, select, textarea')) return;
+        toggleRunMapNoisePanelCollapsed();
+      });
+      els.noisePointsBoxHeader.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        if (event.target.closest('button, a, input, label, select, textarea')) return;
+        event.preventDefault();
+        toggleRunMapNoisePanelCollapsed();
+      });
+    }
+    if (els.noisePointsFilters) {
+      els.noisePointsFilters.addEventListener('click', event => {
+        const toggle = event.target.closest('[data-noise-infraction-toggle]');
+        if (!toggle) return;
+        toggleRunMapNoiseInfractionId(toggle.dataset.noiseInfractionToggle);
       });
     }
     if (els.runMapPointDetailControls) {
@@ -6175,6 +6719,13 @@
           void deleteClusterPoi(deleteButton.dataset.clusterPoiDelete);
           return;
         }
+        const toggleButton = event.target.closest('[data-cluster-poi-toggle]');
+        if (toggleButton) {
+          event.stopPropagation();
+          toggleClusterPoiCollapsed(toggleButton.dataset.clusterPoiToggle);
+          renderClusterPoiList();
+          return;
+        }
         const item = event.target.closest('[data-cluster-poi-id]');
         if (item) {
           loadClusterPoiIntoEditor(item.dataset.clusterPoiId);
@@ -6182,6 +6733,14 @@
       });
       els.clusterPoiList.addEventListener('keydown', event => {
         if (event.target.closest('[data-cluster-poi-delete]')) return;
+        const toggleButton = event.target.closest('[data-cluster-poi-toggle]');
+        if (toggleButton) {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          toggleClusterPoiCollapsed(toggleButton.dataset.clusterPoiToggle);
+          renderClusterPoiList();
+          return;
+        }
         const item = event.target.closest('[data-cluster-poi-id]');
         if (!item) return;
         if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -6190,13 +6749,12 @@
       });
     }
     if (els.poiToggleAllBtn) {
-      els.poiToggleAllBtn.addEventListener('click', () => {
+      els.poiToggleAllBtn.addEventListener('change', event => {
         const total = getPoiLoadedIds().length;
-        const selected = (Array.isArray(state.poiSelectedIds) ? state.poiSelectedIds : []).length;
-        if (total > 0 && selected === total) {
-          setPoiSelectionMode('none');
-        } else {
+        if (total > 0 && event.target.checked) {
           setPoiSelectionMode('all');
+        } else {
+          setPoiSelectionMode('none');
         }
       });
     }
@@ -6262,6 +6820,7 @@
     updateRunMapBoxSelectButton();
     syncMapSettingsMenu(els.mapSettingsMenu, state.runMapVisibleLayerGroups);
     syncMapSettingsMenu(els.poiMapSettingsMenu, state.poiMapVisibleLayerGroups);
+    syncPoiPageLayoutMode();
     setMapSettingsMenuOpen(false);
     setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
     renderClusterPoiManager();
