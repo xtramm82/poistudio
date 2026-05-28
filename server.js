@@ -443,6 +443,35 @@ function normalizePoiClusterPoiPoint(row = {}) {
     : null;
   return point;
 }
+function normalizePoiClusterPoiAreaGeoJson(value = null) {
+  if (!value || typeof value !== 'object') return null;
+  const geometry = value.type === 'Feature' && value.geometry && typeof value.geometry === 'object'
+    ? value.geometry
+    : value;
+  if (!geometry || geometry.type !== 'Polygon' || !Array.isArray(geometry.coordinates) || !geometry.coordinates.length) {
+    return null;
+  }
+  const ring = Array.isArray(geometry.coordinates[0]) ? geometry.coordinates[0] : [];
+  const normalizedRing = ring
+    .map(coord => {
+      const lon = Number(coord?.[0]);
+      const lat = Number(coord?.[1]);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+      return [lon, lat];
+    })
+    .filter(Boolean);
+  if (normalizedRing.length < 4) return null;
+  const [firstLon, firstLat] = normalizedRing[0];
+  const [lastLon, lastLat] = normalizedRing[normalizedRing.length - 1];
+  if (firstLon !== lastLon || firstLat !== lastLat) {
+    normalizedRing.push([firstLon, firstLat]);
+  }
+  if (normalizedRing.length < 4) return null;
+  return {
+    type: 'Polygon',
+    coordinates: [normalizedRing]
+  };
+}
 function normalizePoiClusterPoi(value = {}, existing = null) {
   const raw = value && typeof value === 'object' ? value : {};
   const name = String(raw.name || '').trim();
@@ -463,6 +492,7 @@ function normalizePoiClusterPoi(value = {}, existing = null) {
     runId: String(raw.runId || existing?.runId || '').trim() || null,
     runSetId: String(raw.runSetId || existing?.runSetId || '').trim() || null,
     runSetName: String(raw.runSetName || existing?.runSetName || '').trim(),
+    areaGeoJson: normalizePoiClusterPoiAreaGeoJson(raw.areaGeoJson ?? existing?.areaGeoJson),
     createdAt: existing?.createdAt || raw.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };

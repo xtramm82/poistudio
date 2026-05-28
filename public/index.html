@@ -3257,6 +3257,154 @@
       return POI_COLOR_PALETTE[getPoiColorIndex(poiId)];
     }
 
+    function getPoiAreaPointKey(point = {}) {
+      const lat = Number(point.Latitudine);
+      const lon = Number(point.Longitudine);
+      return `${Number.isFinite(lon) ? lon.toFixed(6) : ''}|${Number.isFinite(lat) ? lat.toFixed(6) : ''}`;
+    }
+
+    function getPoiAreaUniquePoints(points = []) {
+      const unique = new Map();
+      (Array.isArray(points) ? points : []).forEach(point => {
+        if (!point) return;
+        const lat = Number(point.Latitudine);
+        const lon = Number(point.Longitudine);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        unique.set(getPoiAreaPointKey(point), [lon, lat]);
+      });
+      return Array.from(unique.values());
+    }
+
+    function getPoiAreaPadding(points = []) {
+      if (!Array.isArray(points) || !points.length) return 0.00025;
+      const lons = points.map(point => Number(point[0])).filter(Number.isFinite);
+      const lats = points.map(point => Number(point[1])).filter(Number.isFinite);
+      if (!lons.length || !lats.length) return 0.00025;
+      const spanLon = Math.max(...lons) - Math.min(...lons);
+      const spanLat = Math.max(...lats) - Math.min(...lats);
+      const span = Math.max(spanLon, spanLat);
+      return Math.max(0.00025, span * 0.15);
+    }
+
+    function buildPoiAreaGeometry(points = []) {
+      const coords = getPoiAreaUniquePoints(points);
+      if (!coords.length) return null;
+      if (coords.length === 1) {
+        const [lon, lat] = coords[0];
+        const pad = getPoiAreaPadding(coords);
+        return {
+          type: 'Polygon',
+          coordinates: [[
+            [lon - pad, lat - pad],
+            [lon + pad, lat - pad],
+            [lon + pad, lat + pad],
+            [lon - pad, lat + pad],
+            [lon - pad, lat - pad]
+          ]]
+        };
+      }
+      if (coords.length === 2) {
+        const lons = coords.map(point => point[0]);
+        const lats = coords.map(point => point[1]);
+        const pad = getPoiAreaPadding(coords);
+        const minLon = Math.min(...lons) - pad;
+        const maxLon = Math.max(...lons) + pad;
+        const minLat = Math.min(...lats) - pad;
+        const maxLat = Math.max(...lats) + pad;
+        return {
+          type: 'Polygon',
+          coordinates: [[
+            [minLon, minLat],
+            [maxLon, minLat],
+            [maxLon, maxLat],
+            [minLon, maxLat],
+            [minLon, minLat]
+          ]]
+        };
+      }
+
+      const sorted = coords
+        .slice()
+        .sort((a, b) => (a[0] - b[0]) || (a[1] - b[1]));
+      const cross = (origin, a, b) => ((a[0] - origin[0]) * (b[1] - origin[1])) - ((a[1] - origin[1]) * (b[0] - origin[0]));
+      const lower = [];
+      for (const point of sorted) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+          lower.pop();
+        }
+        lower.push(point);
+      }
+      const upper = [];
+      for (let index = sorted.length - 1; index >= 0; index -= 1) {
+        const point = sorted[index];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+          upper.pop();
+        }
+        upper.push(point);
+      }
+      const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+      const pad = getPoiAreaPadding(coords);
+      const area = hull.reduce((sum, point, index) => {
+        const next = hull[(index + 1) % hull.length];
+        return sum + (point[0] * next[1]) - (next[0] * point[1]);
+      }, 0);
+      if (hull.length < 3 || Math.abs(area) < 1e-12) {
+        const lons = coords.map(point => point[0]);
+        const lats = coords.map(point => point[1]);
+        const minLon = Math.min(...lons) - pad;
+        const maxLon = Math.max(...lons) + pad;
+        const minLat = Math.min(...lats) - pad;
+        const maxLat = Math.max(...lats) + pad;
+        return {
+          type: 'Polygon',
+          coordinates: [[
+            [minLon, minLat],
+            [maxLon, minLat],
+            [maxLon, maxLat],
+            [minLon, maxLat],
+            [minLon, minLat]
+          ]]
+        };
+      }
+
+      const ring = hull.slice();
+      ring.push(hull[0]);
+      return {
+        type: 'Polygon',
+        coordinates: [ring]
+      };
+    }
+
+    function normalizePoiAreaGeometry(value = null) {
+      if (!value || typeof value !== 'object') return null;
+      const geometry = value.type === 'Feature' && value.geometry && typeof value.geometry === 'object'
+        ? value.geometry
+        : value;
+      if (!geometry || geometry.type !== 'Polygon' || !Array.isArray(geometry.coordinates) || !geometry.coordinates.length) {
+        return null;
+      }
+      const ring = Array.isArray(geometry.coordinates[0]) ? geometry.coordinates[0] : [];
+      const normalizedRing = ring
+        .map(coord => {
+          const lon = Number(coord?.[0]);
+          const lat = Number(coord?.[1]);
+          if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+          return [lon, lat];
+        })
+        .filter(Boolean);
+      if (normalizedRing.length < 4) return null;
+      const [firstLon, firstLat] = normalizedRing[0];
+      const [lastLon, lastLat] = normalizedRing[normalizedRing.length - 1];
+      if (firstLon !== lastLon || firstLat !== lastLat) {
+        normalizedRing.push([firstLon, firstLat]);
+      }
+      if (normalizedRing.length < 4) return null;
+      return {
+        type: 'Polygon',
+        coordinates: [normalizedRing]
+      };
+    }
+
     function getInfractionPieColor(value) {
       return INFRACTION_PIE_COLORS[Number(value)] || '#94a3b8';
     }
@@ -4132,6 +4280,27 @@
         });
     }
 
+    function getVisiblePoiAreaFeatures() {
+      const selectedIds = getPoiSelectedIdsSet();
+      return getPoiItems()
+        .filter(item => selectedIds.has(String(item.id)))
+        .flatMap((item, poiIndex) => {
+          const geometry = normalizePoiAreaGeometry(item.areaGeoJson) || buildPoiAreaGeometry(Array.isArray(item.points) ? item.points : []);
+          if (!geometry) return [];
+          return [{
+            type: 'Feature',
+            geometry,
+            properties: {
+              poiId: String(item.id || ''),
+              poiName: String(item.name || 'POI senza nome'),
+              poiColor: getPoiColor(item.id),
+              poiColorIndex: getPoiColorIndex(item.id),
+              poiIndex
+            }
+          }];
+        });
+    }
+
     function getPoiMapBounds(features = []) {
       const bounds = new window.maplibregl.LngLatBounds();
       let hasBounds = false;
@@ -4257,13 +4426,22 @@
     function renderPoiMapSource() {
       if (!state.poiMap) return;
       const features = getVisiblePoiFeatures();
+      const areaFeatures = getVisiblePoiAreaFeatures();
       const source = state.poiMap.getSource('poi-page-source');
       const data = {
         type: 'FeatureCollection',
         features
       };
+      const areaSource = state.poiMap.getSource('poi-page-area-source');
+      const areaData = {
+        type: 'FeatureCollection',
+        features: areaFeatures
+      };
       if (source && typeof source.setData === 'function') {
         source.setData(data);
+      }
+      if (areaSource && typeof areaSource.setData === 'function') {
+        areaSource.setData(areaData);
       }
       if (els.poiMapEmpty) {
         const shouldHide = features.length > 0;
@@ -4306,6 +4484,35 @@
         });
         state.poiMap.addControl(new maplibre.NavigationControl(), 'top-right');
         state.poiMap.on('load', () => {
+          if (!state.poiMap.getSource('poi-page-area-source')) {
+            state.poiMap.addSource('poi-page-area-source', {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-area-fill')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-area-fill',
+              type: 'fill',
+              source: 'poi-page-area-source',
+              paint: {
+                'fill-color': ['coalesce', ['get', 'poiColor'], '#c2410c'],
+                'fill-opacity': 0.12
+              }
+            });
+          }
+          if (!state.poiMap.getLayer('poi-page-area-outline')) {
+            state.poiMap.addLayer({
+              id: 'poi-page-area-outline',
+              type: 'line',
+              source: 'poi-page-area-source',
+              paint: {
+                'line-color': ['coalesce', ['get', 'poiColor'], '#c2410c'],
+                'line-width': 2,
+                'line-opacity': 0.45
+              }
+            });
+          }
           if (!state.poiMap.getSource('poi-page-source')) {
             state.poiMap.addSource('poi-page-source', {
               type: 'geojson',
@@ -4668,6 +4875,7 @@
         name,
         description,
         points,
+        areaGeoJson: buildPoiAreaGeometry(points),
         runId: isEdit ? (editingItem?.runId || null) : (run?.id || null),
         runSetId: isEdit ? (editingItem?.runSetId || null) : (run?.setId || null),
         runSetName: isEdit ? (editingItem?.runSetName || '') : (run?.setName || '')
