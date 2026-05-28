@@ -1,3 +1,6 @@
 .data/
 node_modules/
 .openclaw/workspace-state.json
+.tmp-shot/
+deployments/
+memory/

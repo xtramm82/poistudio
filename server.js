@@ -1922,6 +1922,17 @@ app.get('/api/poi/cluster-pois', (_req, res) => {
   res.json({ ok: true, pois: getPoiClusterPois() });
 });
 
+app.get('/api/poi/cluster-pois/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) return res.status(400).json({ ok: false, error: 'Missing POI id' });
+
+  const pois = getPoiClusterPois();
+  const item = pois.find(poi => poi.id === id);
+  if (!item) return res.status(404).json({ ok: false, error: 'POI not found' });
+
+  res.json(item);
+});
+
 app.post('/api/poi/cluster-pois', (req, res) => {
   try {
     const next = normalizePoiClusterPoi(req.body || {});

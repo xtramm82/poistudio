@@ -1140,6 +1140,9 @@
       gap: 8px;
       flex-shrink: 0;
     }
+    .poi-page-item-actions .cluster-json-link {
+      min-width: 54px;
+    }
     .poi-page-item-toggle {
       display: inline-flex;
       align-items: center;
@@ -1565,6 +1568,9 @@
       justify-content: center;
       white-space: nowrap;
     }
+    .poi-list-item-actions .cluster-json-link {
+      min-width: 54px;
+    }
     .cluster-noise .cluster-item-title {
       color: #111827;
     }
@@ -1925,12 +1931,11 @@
     }
     .poi-list-item-title-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       min-width: 0;
       width: 100%;
-      position: relative;
-      padding-right: 84px;
+      flex-wrap: wrap;
     }
     .poi-list-item-title {
       font-size: 0.95rem;
@@ -1951,18 +1956,89 @@
       gap: 8px;
       flex-shrink: 0;
       justify-content: flex-end;
+      margin-left: auto;
+      flex-wrap: wrap;
     }
     .poi-list-item-delete {
       padding: 7px 10px;
       min-height: 32px;
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
       flex-shrink: 0;
     }
     .poi-list-item.is-collapsed .poi-list-item-description {
       display: none;
+    }
+    .poi-json-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .poi-json-viewer[hidden] {
+      display: none;
+    }
+    .poi-json-viewer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(4px);
+    }
+    .poi-json-viewer-panel {
+      position: relative;
+      width: min(920px, 100%);
+      max-height: min(84vh, 860px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 250, 245, 0.98));
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.26);
+      overflow: hidden;
+    }
+    .poi-json-viewer-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .poi-json-viewer-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .poi-json-viewer-meta {
+      margin-top: 4px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .poi-json-viewer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .poi-json-viewer-body {
+      margin: 0;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 113, 108, 0.12);
+      background: #0f172a;
+      color: #e2e8f0;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.84rem;
+      line-height: 1.55;
+      flex: 1;
+      min-height: 0;
+      scrollbar-gutter: stable;
     }
     @media (max-width: 1100px) {
       .grid-3, .split { grid-template-columns: 1fr; }
@@ -2421,6 +2497,22 @@
     </section>
   </div>
   <div class="cluster-pie-tooltip" id="clusterPieTooltip" hidden></div>
+  <div class="poi-json-viewer" id="clusterPoiJsonViewer" hidden aria-hidden="true">
+    <div class="poi-json-viewer-backdrop" data-cluster-poi-json-close></div>
+    <div class="poi-json-viewer-panel" role="dialog" aria-modal="true" aria-labelledby="clusterPoiJsonViewerTitle">
+      <div class="poi-json-viewer-head">
+        <div>
+          <h3 class="poi-json-viewer-title" id="clusterPoiJsonViewerTitle">JSON POI</h3>
+          <div class="poi-json-viewer-meta" id="clusterPoiJsonViewerMeta"></div>
+        </div>
+        <div class="poi-json-viewer-actions">
+          <a class="btn ghost" href="#" target="_blank" rel="noopener noreferrer" data-cluster-poi-json-open-browser>Apri nel browser</a>
+          <button class="btn ghost" type="button" data-cluster-poi-json-close>Chiudi</button>
+        </div>
+      </div>
+      <pre class="poi-json-viewer-body" id="clusterPoiJsonViewerBody"></pre>
+    </div>
+  </div>
 
   <script
     src="https://unpkg.com/maplibre-gl@5.16.0/dist/maplibre-gl.js"
@@ -2788,6 +2880,10 @@
       runMapBoxSelectionSuppressClick: false,
       clusterPieTooltip: null,
       clusterPieTooltipTarget: null,
+      clusterPoiJsonViewer: null,
+      clusterPoiJsonViewerTitle: null,
+      clusterPoiJsonViewerMeta: null,
+      clusterPoiJsonViewerBody: null,
       runMapVisibleLayerGroups: loadPersistedMapVisibleLayerGroups(),
       poiMapVisibleLayerGroups: loadPersistedPoiMapVisibleLayerGroups(),
       runMapClusterBounds: {},
@@ -2857,6 +2953,10 @@
       clusterPoiMeta: document.getElementById('clusterPoiMeta'),
       clusterPoiSubmitBtn: document.getElementById('clusterPoiSubmitBtn'),
       clusterPoiList: document.getElementById('clusterPoiList'),
+      clusterPoiJsonViewer: document.getElementById('clusterPoiJsonViewer'),
+      clusterPoiJsonViewerTitle: document.getElementById('clusterPoiJsonViewerTitle'),
+      clusterPoiJsonViewerMeta: document.getElementById('clusterPoiJsonViewerMeta'),
+      clusterPoiJsonViewerBody: document.getElementById('clusterPoiJsonViewerBody'),
       saveConfigBtn: document.getElementById('saveConfigBtn'),
       testSqlBtn: document.getElementById('testSqlBtn'),
       saveExecutionSetBtn: document.getElementById('saveExecutionSetBtn'),
@@ -4185,6 +4285,94 @@
       setClusterPoiCollapsed(key, !isClusterPoiCollapsed(key));
     }
 
+    function closeClusterPoiJsonViewer() {
+      if (!els.clusterPoiJsonViewer) return;
+      els.clusterPoiJsonViewer.hidden = true;
+      els.clusterPoiJsonViewer.setAttribute('aria-hidden', 'true');
+      if (els.clusterPoiJsonViewerBody) {
+        els.clusterPoiJsonViewerBody.textContent = '';
+      }
+      if (els.clusterPoiJsonViewerMeta) {
+        els.clusterPoiJsonViewerMeta.textContent = '';
+      }
+      if (els.clusterPoiJsonViewer && els.clusterPoiJsonViewer.querySelector('[data-cluster-poi-json-open-browser]')) {
+        els.clusterPoiJsonViewer.querySelector('[data-cluster-poi-json-open-browser]').setAttribute('href', '#');
+      }
+    }
+
+    function openClusterPoiJsonViewerContent({
+      title = 'JSON POI',
+      metaParts = [],
+      json = '',
+      browserHref = '#'
+    } = {}) {
+      if (!els.clusterPoiJsonViewer) return;
+      if (els.clusterPoiJsonViewerTitle) {
+        els.clusterPoiJsonViewerTitle.textContent = title;
+      }
+      if (els.clusterPoiJsonViewerMeta) {
+        els.clusterPoiJsonViewerMeta.textContent = metaParts.filter(Boolean).join(' · ');
+      }
+      if (els.clusterPoiJsonViewerBody) {
+        els.clusterPoiJsonViewerBody.textContent = json;
+      }
+      const browserLink = els.clusterPoiJsonViewer.querySelector('[data-cluster-poi-json-open-browser]');
+      if (browserLink) {
+        browserLink.setAttribute('href', browserHref || '#');
+      }
+      els.clusterPoiJsonViewer.hidden = false;
+      els.clusterPoiJsonViewer.setAttribute('aria-hidden', 'false');
+      window.requestAnimationFrame(() => {
+        const closeButton = els.clusterPoiJsonViewer?.querySelector('[data-cluster-poi-json-close]');
+        if (closeButton && typeof closeButton.focus === 'function') {
+          try {
+            closeButton.focus({ preventScroll: true });
+          } catch {
+            closeButton.focus();
+          }
+        }
+      });
+    }
+
+    function openClusterPoiJsonViewer(id = '') {
+      const item = getPoiItemById(id);
+      if (!item) return;
+      const pointCount = Number(item.pointCount ?? (Array.isArray(item.points) ? item.points.length : 0)) || 0;
+      openClusterPoiJsonViewerContent({
+        title: `JSON POI: ${item.name || 'POI senza nome'}`,
+        metaParts: [
+          `ID ${item.id || 'n/d'}`,
+          `${formatCount(pointCount)} punti`,
+          formatRunDateTime(item.updatedAt || item.createdAt) || 'Data n/d'
+        ],
+        json: JSON.stringify(item, null, 2),
+        browserHref: `${API.clusterPois}/${encodeURIComponent(item.id)}`
+      });
+    }
+
+    async function openRunClusterJsonViewer(runId = '', clusterId = '') {
+      const run = (Array.isArray(state.poiRuns) ? state.poiRuns : []).find(item => item.id === runId) || getSelectedRun();
+      const resolvedRunId = String(runId || run?.id || '').trim();
+      const resolvedClusterId = String(clusterId || '').trim();
+      if (!resolvedRunId || !resolvedClusterId) return;
+      try {
+        const json = await fetchJson(buildPoiClusterUrl(resolvedRunId, resolvedClusterId), { timeoutMs: 15000 });
+        const pointCount = Number(json?.pointCount ?? json?.PointCount ?? json?.points?.length ?? 0) || 0;
+        openClusterPoiJsonViewerContent({
+          title: `JSON cluster: Cluster ${resolvedClusterId}`,
+          metaParts: [
+            `Run ${run?.setName || run?.id || 'n/d'}`,
+            `Cluster ${resolvedClusterId}`,
+            pointCount > 0 ? `${formatCount(pointCount)} punti` : ''
+          ],
+          json: JSON.stringify(json, null, 2),
+          browserHref: buildPoiClusterUrl(resolvedRunId, resolvedClusterId)
+        });
+      } catch (err) {
+        setInlineStatus(els.runStatus, `Lettura JSON cluster fallita: ${err.message}`, 'error');
+      }
+    }
+
     function getPoiLoadedIds() {
       return getPoiItems().map(item => String(item.id)).filter(Boolean);
     }
@@ -4411,6 +4599,7 @@
                 ${shortDescription ? `<div class="poi-page-item-description">${escapeHtml(shortDescription)}</div>` : ''}
               </div>
               <div class="poi-page-item-actions">
+                <button class="btn ghost cluster-json-link" type="button" data-poi-json="${escapeHtml(item.id)}">JSON</button>
                 <label class="poi-page-item-toggle" aria-label="Seleziona POI">
                   <input type="checkbox" class="switch-input" data-poi-toggle="${escapeHtml(item.id)}" ${selected ? 'checked' : ''} aria-label="Seleziona POI">
                   <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
@@ -4760,7 +4949,10 @@
                 <div class="poi-list-item-title-row">
                   <div class="poi-list-item-title">${escapeHtml(item.name || 'POI senza nome')}</div>
                   <span class="collapse-indicator" aria-hidden="true">▾</span>
-                  <button class="btn danger poi-list-item-delete" type="button" data-cluster-poi-delete="${escapeHtml(item.id)}">Elimina</button>
+                  <div class="poi-list-item-actions">
+                    <button class="btn ghost cluster-json-link" type="button" data-cluster-poi-json="${escapeHtml(item.id)}">JSON</button>
+                    <button class="btn danger poi-list-item-delete" type="button" data-cluster-poi-delete="${escapeHtml(item.id)}">Elimina</button>
+                  </div>
                 </div>
                 <div class="poi-list-item-subtitle">${escapeHtml(subtitle)}</div>
               </div>
@@ -6014,7 +6206,7 @@
               </div>
             </div>
             <div class="cluster-item-actions">
-              <a class="btn ghost cluster-json-link" href="${escapeHtml(buildPoiClusterUrl(run.id, file.clusterId) + '?raw=1')}" target="_blank" rel="noopener noreferrer">JSON</a>
+              <button class="btn ghost cluster-json-link" type="button" data-run-cluster-json data-run-id="${escapeHtml(run.id)}" data-run-cluster-id="${escapeHtml(file.clusterId)}">JSON</button>
               <label class="cluster-toggle" aria-label="Mostra sulla mappa">
                 <input type="checkbox" class="switch-input" data-cluster-id="${escapeHtml(file.clusterId)}" aria-label="Mostra sulla mappa">
                 <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
@@ -6714,6 +6906,8 @@
         renderRunResults();
       } else if (pageId === 'poi-page') {
         void renderPoiPage();
+      } else {
+        closeClusterPoiJsonViewer();
       }
     }
 
@@ -6784,6 +6978,12 @@
       if (fromPie === state.clusterPieTooltipTarget && !fromPie.contains(toNode) && !isWithinClusterPieTooltip(toNode)) {
         hideClusterPieTooltip();
       }
+    });
+    els.runMapClusters.addEventListener('click', event => {
+      const jsonButton = event.target.closest('[data-run-cluster-json]');
+      if (!jsonButton) return;
+      event.stopPropagation();
+      void openRunClusterJsonViewer(jsonButton.dataset.runId, jsonButton.dataset.runClusterId);
     });
     if (els.mapSettingsBtn) {
       els.mapSettingsBtn.addEventListener('click', event => {
@@ -6921,6 +7121,12 @@
     }
     if (els.clusterPoiList) {
       els.clusterPoiList.addEventListener('click', event => {
+        const jsonButton = event.target.closest('[data-cluster-poi-json]');
+        if (jsonButton) {
+          event.stopPropagation();
+          openClusterPoiJsonViewer(jsonButton.dataset.clusterPoiJson);
+          return;
+        }
         const deleteButton = event.target.closest('[data-cluster-poi-delete]');
         if (deleteButton) {
           event.stopPropagation();
@@ -6940,6 +7146,13 @@
         }
       });
       els.clusterPoiList.addEventListener('keydown', event => {
+        const jsonButton = event.target.closest('[data-cluster-poi-json]');
+        if (jsonButton) {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          openClusterPoiJsonViewer(jsonButton.dataset.clusterPoiJson);
+          return;
+        }
         if (event.target.closest('[data-cluster-poi-delete]')) return;
         const toggleButton = event.target.closest('[data-cluster-poi-toggle]');
         if (toggleButton) {
@@ -6956,6 +7169,13 @@
         loadClusterPoiIntoEditor(item.dataset.clusterPoiId);
       });
     }
+    if (els.clusterPoiJsonViewer) {
+      els.clusterPoiJsonViewer.addEventListener('click', event => {
+        if (event.target.closest('[data-cluster-poi-json-close]')) {
+          closeClusterPoiJsonViewer();
+        }
+      });
+    }
     if (els.poiToggleAllBtn) {
       els.poiToggleAllBtn.addEventListener('change', event => {
         const total = getPoiLoadedIds().length;
@@ -6968,6 +7188,12 @@
     }
     if (els.poiPageList) {
       els.poiPageList.addEventListener('click', event => {
+        const jsonButton = event.target.closest('[data-poi-json]');
+        if (jsonButton) {
+          event.stopPropagation();
+          openClusterPoiJsonViewer(jsonButton.dataset.poiJson);
+          return;
+        }
         const item = event.target.closest('[data-poi-id]');
         if (!item) return;
         if (event.target.closest('input, label, button, a, select, textarea')) return;
@@ -6979,8 +7205,16 @@
         togglePoiSelection(toggle.dataset.poiToggle, toggle.checked);
       });
       els.poiPageList.addEventListener('keydown', event => {
+        const jsonButton = event.target.closest('[data-poi-json]');
+        if (jsonButton) {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          openClusterPoiJsonViewer(jsonButton.dataset.poiJson);
+          return;
+        }
         const item = event.target.closest('[data-poi-id]');
         if (!item) return;
+        if (event.target.closest('input, label, button, a, select, textarea')) return;
         if (event.key !== 'Enter' && event.key !== ' ') return;
         event.preventDefault();
         togglePoiSelection(item.dataset.poiId);
@@ -6994,6 +7228,10 @@
     }, true);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
+        if (!els.clusterPoiJsonViewer?.hidden) {
+          closeClusterPoiJsonViewer();
+          return;
+        }
         setMapSettingsMenuOpen(false);
         setMapSettingsMenuOpen(false, els.poiMapSettingsMenu, els.poiMapSettingsBtn);
       }
